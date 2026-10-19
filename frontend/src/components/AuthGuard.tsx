@@ -17,7 +17,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   if (!ready) {
-    return <div className="page-loading">Loading…</div>;
+    return (
+      <div className="page-loading" style={{ minHeight: "100vh", justifyContent: "center" }}>
+        Loading…
+      </div>
+    );
   }
 
   return <>{children}</>;

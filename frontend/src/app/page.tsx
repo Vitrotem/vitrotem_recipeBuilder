@@ -65,7 +65,7 @@ function RecipeList() {
       {error && <div className="alert">{error}</div>}
 
       {loading ? (
-        <p className="page-loading">Loading recipes…</p>
+        <div className="page-loading">Loading recipes…</div>
       ) : recipes.length === 0 ? (
         <div className="empty-state">
           No recipes yet. <Link href="/recipes/new">Create the first one</Link>.

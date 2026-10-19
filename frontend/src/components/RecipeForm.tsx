@@ -2,6 +2,34 @@
 
 import { useState } from "react";
 import type { RecipeInput } from "@/lib/types";
+import SelectOrOther from "./SelectOrOther";
+import SelectOrOtherNumber from "./SelectOrOtherNumber";
+import {
+  BLOT_COUNTS,
+  BLOT_TIMES_MS,
+  BUFFERS,
+  CONCENTRATION_UNITS,
+  DEFOCUS_UM,
+  FAILURE_MODES,
+  GRAPHENE_CLEANING,
+  GRAPHENE_LAYERS,
+  GRID_MESH,
+  GRID_PRODUCTS,
+  HOLE_SIZES_UM,
+  MAGNIFICATIONS,
+  MICROSCOPES,
+  PIXEL_SIZES_A,
+  PLASMA_DURATIONS_S,
+  PLASMA_GASES,
+  PLASMA_MODELS,
+  PLASMA_POWER,
+  RH_PERCENT,
+  SAMPLE_CLASSES,
+  SAMPLE_SUBTYPES,
+  SAMPLE_VOLUMES_NL,
+  TARGET_THICKNESS_NM,
+  VOLTAGE_KV,
+} from "@/lib/formOptions";
 
 type Props = {
   initial: RecipeInput;
@@ -9,12 +37,6 @@ type Props = {
   onSubmit: (data: RecipeInput) => Promise<void>;
   onDelete?: () => Promise<void>;
 };
-
-function num(value: string): number | null {
-  if (value === "" || value == null) return null;
-  const n = Number(value);
-  return Number.isFinite(n) ? n : null;
-}
 
 export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete }: Props) {
   const [form, setForm] = useState<RecipeInput>(initial);
@@ -26,11 +48,9 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete }:
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  function patchSection<S extends "plasma" | "naiad" | "sample" | "grid" | "graphene" | "microscope" | "outcome">(
-    section: S,
-    key: string,
-    value: unknown,
-  ) {
+  function patchSection<
+    S extends "plasma" | "naiad" | "sample" | "grid" | "graphene" | "microscope" | "outcome",
+  >(section: S, key: string, value: unknown) {
     setForm((prev) => ({
       ...prev,
       [section]: { ...prev[section], [key]: value },
@@ -98,7 +118,11 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete }:
           </label>
           <label>
             Tags (comma-separated)
-            <input value={tagsText} onChange={(e) => setTagsText(e.target.value)} placeholder="protein, NAIAD" />
+            <input
+              value={tagsText}
+              onChange={(e) => setTagsText(e.target.value)}
+              placeholder="protein, NAIAD, graphene"
+            />
           </label>
         </div>
         <label>
@@ -114,47 +138,35 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete }:
       <section className="form-section">
         <h2>Plasma cleaner</h2>
         <div className="grid-2">
-          <label>
-            Model
-            <input
-              value={form.plasma.model || ""}
-              onChange={(e) => patchSection("plasma", "model", e.target.value || null)}
-              placeholder="GloQube / Harrick / other"
-            />
-          </label>
-          <label>
-            Gas
-            <input
-              value={form.plasma.gas || ""}
-              onChange={(e) => patchSection("plasma", "gas", e.target.value || null)}
-              placeholder="O₂, Ar, H₂/O₂…"
-            />
-          </label>
-          <label>
-            Duration (s)
-            <input
-              type="number"
-              step="any"
-              value={form.plasma.duration_s ?? ""}
-              onChange={(e) => patchSection("plasma", "duration_s", num(e.target.value))}
-            />
-          </label>
-          <label>
-            Power (W or %)
-            <input
-              type="number"
-              step="any"
-              value={form.plasma.power ?? ""}
-              onChange={(e) => patchSection("plasma", "power", num(e.target.value))}
-            />
-          </label>
+          <SelectOrOther
+            label="Model"
+            value={form.plasma.model}
+            options={PLASMA_MODELS}
+            onChange={(v) => patchSection("plasma", "model", v)}
+          />
+          <SelectOrOther
+            label="Gas"
+            value={form.plasma.gas}
+            options={PLASMA_GASES}
+            onChange={(v) => patchSection("plasma", "gas", v)}
+          />
+          <SelectOrOtherNumber
+            label="Duration (s)"
+            value={form.plasma.duration_s}
+            options={PLASMA_DURATIONS_S}
+            onChange={(v) => patchSection("plasma", "duration_s", v)}
+          />
+          <SelectOrOtherNumber
+            label="Power (W)"
+            value={form.plasma.power}
+            options={PLASMA_POWER}
+            onChange={(v) => patchSection("plasma", "power", v)}
+          />
           <label>
             Target
             <select
               value={form.plasma.target || ""}
-              onChange={(e) =>
-                patchSection("plasma", "target", e.target.value || null)
-              }
+              onChange={(e) => patchSection("plasma", "target", e.target.value || null)}
             >
               <option value="">—</option>
               <option value="bottom">Bottom layer</option>
@@ -168,32 +180,24 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete }:
       <section className="form-section">
         <h2>NAIAD</h2>
         <div className="grid-2">
-          <label>
-            Blot time (ms)
-            <input
-              type="number"
-              step="any"
-              value={form.naiad.blot_time_ms ?? ""}
-              onChange={(e) => patchSection("naiad", "blot_time_ms", num(e.target.value))}
-            />
-          </label>
-          <label>
-            RH setpoint (%)
-            <input
-              type="number"
-              step="any"
-              value={form.naiad.rh_percent ?? ""}
-              onChange={(e) => patchSection("naiad", "rh_percent", num(e.target.value))}
-            />
-          </label>
-          <label>
-            Blot count
-            <input
-              type="number"
-              value={form.naiad.blot_count ?? ""}
-              onChange={(e) => patchSection("naiad", "blot_count", num(e.target.value))}
-            />
-          </label>
+          <SelectOrOtherNumber
+            label="Blot time (ms)"
+            value={form.naiad.blot_time_ms}
+            options={BLOT_TIMES_MS}
+            onChange={(v) => patchSection("naiad", "blot_time_ms", v)}
+          />
+          <SelectOrOtherNumber
+            label="RH setpoint (%)"
+            value={form.naiad.rh_percent}
+            options={RH_PERCENT}
+            onChange={(v) => patchSection("naiad", "rh_percent", v)}
+          />
+          <SelectOrOtherNumber
+            label="Blot count"
+            value={form.naiad.blot_count}
+            options={BLOT_COUNTS}
+            onChange={(v) => patchSection("naiad", "blot_count", v)}
+          />
           <label className="checkbox-label">
             <input
               type="checkbox"
@@ -208,28 +212,28 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete }:
       <section className="form-section">
         <h2>Sample</h2>
         <div className="grid-2">
-          <label>
-            Class
-            <input
-              value={form.sample.sample_class || ""}
-              onChange={(e) => patchSection("sample", "sample_class", e.target.value || null)}
-              placeholder="protein, NP, virus…"
-            />
-          </label>
-          <label>
-            Subtype
-            <input
-              value={form.sample.subtype || ""}
-              onChange={(e) => patchSection("sample", "subtype", e.target.value || null)}
-            />
-          </label>
+          <SelectOrOther
+            label="Class"
+            value={form.sample.sample_class}
+            options={SAMPLE_CLASSES}
+            onChange={(v) => patchSection("sample", "sample_class", v)}
+          />
+          <SelectOrOther
+            label="Subtype"
+            value={form.sample.subtype}
+            options={SAMPLE_SUBTYPES}
+            onChange={(v) => patchSection("sample", "subtype", v)}
+          />
           <label>
             Size (nm)
             <input
               type="number"
               step="any"
               value={form.sample.size_nm ?? ""}
-              onChange={(e) => patchSection("sample", "size_nm", num(e.target.value))}
+              onChange={(e) => {
+                const v = e.target.value;
+                patchSection("sample", "size_nm", v === "" ? null : Number(v));
+              }}
             />
           </label>
           <label>
@@ -238,172 +242,142 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete }:
               type="number"
               step="any"
               value={form.sample.concentration ?? ""}
-              onChange={(e) => patchSection("sample", "concentration", num(e.target.value))}
+              onChange={(e) => {
+                const v = e.target.value;
+                patchSection("sample", "concentration", v === "" ? null : Number(v));
+              }}
             />
           </label>
-          <label>
-            Concentration unit
-            <input
-              value={form.sample.concentration_unit || ""}
-              onChange={(e) =>
-                patchSection("sample", "concentration_unit", e.target.value || null)
-              }
-              placeholder="mg/mL, µM…"
-            />
-          </label>
-          <label>
-            Buffer
-            <input
-              value={form.sample.buffer || ""}
-              onChange={(e) => patchSection("sample", "buffer", e.target.value || null)}
-            />
-          </label>
+          <SelectOrOther
+            label="Concentration unit"
+            value={form.sample.concentration_unit}
+            options={CONCENTRATION_UNITS}
+            onChange={(v) => patchSection("sample", "concentration_unit", v)}
+          />
+          <SelectOrOther
+            label="Buffer"
+            value={form.sample.buffer}
+            options={BUFFERS}
+            onChange={(v) => patchSection("sample", "buffer", v)}
+          />
           <label>
             pH
             <input
               type="number"
               step="any"
               value={form.sample.ph ?? ""}
-              onChange={(e) => patchSection("sample", "ph", num(e.target.value))}
+              onChange={(e) => {
+                const v = e.target.value;
+                patchSection("sample", "ph", v === "" ? null : Number(v));
+              }}
             />
           </label>
-          <label>
-            Volume (nL)
-            <input
-              type="number"
-              step="any"
-              value={form.sample.volume_nl ?? ""}
-              onChange={(e) => patchSection("sample", "volume_nl", num(e.target.value))}
-            />
-          </label>
+          <SelectOrOtherNumber
+            label="Volume (nL)"
+            value={form.sample.volume_nl}
+            options={SAMPLE_VOLUMES_NL}
+            onChange={(v) => patchSection("sample", "volume_nl", v)}
+          />
         </div>
       </section>
 
       <section className="form-section">
         <h2>Grid</h2>
         <div className="grid-2">
-          <label>
-            Product / model
-            <input
-              value={form.grid.product || ""}
-              onChange={(e) => patchSection("grid", "product", e.target.value || null)}
-              placeholder="Quantifoil, UltrAuFoil…"
-            />
-          </label>
-          <label>
-            Mesh
-            <input
-              value={form.grid.mesh || ""}
-              onChange={(e) => patchSection("grid", "mesh", e.target.value || null)}
-              placeholder="200 / 300 / 400"
-            />
-          </label>
-          <label>
-            Hole size (µm)
-            <input
-              type="number"
-              step="any"
-              value={form.grid.hole_size_um ?? ""}
-              onChange={(e) => patchSection("grid", "hole_size_um", num(e.target.value))}
-            />
-          </label>
+          <SelectOrOther
+            label="Product / model"
+            value={form.grid.product}
+            options={GRID_PRODUCTS}
+            onChange={(v) => patchSection("grid", "product", v)}
+          />
+          <SelectOrOther
+            label="Mesh"
+            value={form.grid.mesh}
+            options={GRID_MESH}
+            onChange={(v) => patchSection("grid", "mesh", v)}
+          />
+          <SelectOrOtherNumber
+            label="Hole size (µm)"
+            value={form.grid.hole_size_um}
+            options={HOLE_SIZES_UM}
+            onChange={(v) => patchSection("grid", "hole_size_um", v)}
+          />
         </div>
       </section>
 
       <section className="form-section">
         <h2>Graphene</h2>
         <div className="grid-2">
-          <label>
-            Bottom layer
-            <input
-              value={form.graphene.bottom_layer || ""}
-              onChange={(e) => patchSection("graphene", "bottom_layer", e.target.value || null)}
-            />
-          </label>
-          <label>
-            Top layer
-            <input
-              value={form.graphene.top_layer || ""}
-              onChange={(e) => patchSection("graphene", "top_layer", e.target.value || null)}
-            />
-          </label>
-          <label>
-            Cleaning method
-            <input
-              value={form.graphene.cleaning_method || ""}
-              onChange={(e) =>
-                patchSection("graphene", "cleaning_method", e.target.value || null)
-              }
-              placeholder="plasma, anneal, solvent…"
-            />
-          </label>
-          <label>
-            Target thickness (nm)
-            <input
-              type="number"
-              step="any"
-              value={form.graphene.target_thickness_nm ?? ""}
-              onChange={(e) =>
-                patchSection("graphene", "target_thickness_nm", num(e.target.value))
-              }
-            />
-          </label>
+          <SelectOrOther
+            label="Bottom layer"
+            value={form.graphene.bottom_layer}
+            options={GRAPHENE_LAYERS}
+            onChange={(v) => patchSection("graphene", "bottom_layer", v)}
+          />
+          <SelectOrOther
+            label="Top layer"
+            value={form.graphene.top_layer}
+            options={GRAPHENE_LAYERS}
+            onChange={(v) => patchSection("graphene", "top_layer", v)}
+          />
+          <SelectOrOther
+            label="Cleaning method"
+            value={form.graphene.cleaning_method}
+            options={GRAPHENE_CLEANING}
+            onChange={(v) => patchSection("graphene", "cleaning_method", v)}
+          />
+          <SelectOrOtherNumber
+            label="Target thickness (nm)"
+            value={form.graphene.target_thickness_nm}
+            options={TARGET_THICKNESS_NM}
+            onChange={(v) => patchSection("graphene", "target_thickness_nm", v)}
+          />
         </div>
       </section>
 
       <section className="form-section">
         <h2>Microscope</h2>
         <div className="grid-2">
-          <label>
-            Instrument
-            <input
-              value={form.microscope.instrument || ""}
-              onChange={(e) => patchSection("microscope", "instrument", e.target.value || null)}
-            />
-          </label>
-          <label>
-            Voltage (kV)
-            <input
-              type="number"
-              step="any"
-              value={form.microscope.voltage_kv ?? ""}
-              onChange={(e) => patchSection("microscope", "voltage_kv", num(e.target.value))}
-            />
-          </label>
-          <label>
-            Magnification
-            <input
-              type="number"
-              step="any"
-              value={form.microscope.magnification ?? ""}
-              onChange={(e) => patchSection("microscope", "magnification", num(e.target.value))}
-            />
-          </label>
-          <label>
-            Pixel size (Å)
-            <input
-              type="number"
-              step="any"
-              value={form.microscope.pixel_size_A ?? ""}
-              onChange={(e) => patchSection("microscope", "pixel_size_A", num(e.target.value))}
-            />
-          </label>
-          <label>
-            Defocus (µm)
-            <input
-              type="number"
-              step="any"
-              value={form.microscope.defocus_um ?? ""}
-              onChange={(e) => patchSection("microscope", "defocus_um", num(e.target.value))}
-            />
-          </label>
+          <SelectOrOther
+            label="Instrument"
+            value={form.microscope.instrument}
+            options={MICROSCOPES}
+            onChange={(v) => patchSection("microscope", "instrument", v)}
+          />
+          <SelectOrOtherNumber
+            label="Voltage (kV)"
+            value={form.microscope.voltage_kv}
+            options={VOLTAGE_KV}
+            onChange={(v) => patchSection("microscope", "voltage_kv", v)}
+          />
+          <SelectOrOtherNumber
+            label="Magnification"
+            value={form.microscope.magnification}
+            options={MAGNIFICATIONS}
+            onChange={(v) => patchSection("microscope", "magnification", v)}
+          />
+          <SelectOrOtherNumber
+            label="Pixel size (Å)"
+            value={form.microscope.pixel_size_A}
+            options={PIXEL_SIZES_A}
+            onChange={(v) => patchSection("microscope", "pixel_size_A", v)}
+          />
+          <SelectOrOtherNumber
+            label="Defocus (µm)"
+            value={form.microscope.defocus_um}
+            options={DEFOCUS_UM}
+            onChange={(v) => patchSection("microscope", "defocus_um", v)}
+          />
           <label>
             Dose rate (e⁻/Å²/s)
             <input
               type="number"
               step="any"
               value={form.microscope.dose_rate ?? ""}
-              onChange={(e) => patchSection("microscope", "dose_rate", num(e.target.value))}
+              onChange={(e) => {
+                const v = e.target.value;
+                patchSection("microscope", "dose_rate", v === "" ? null : Number(v));
+              }}
             />
           </label>
           <label>
@@ -412,7 +386,10 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete }:
               type="number"
               step="any"
               value={form.microscope.total_dose ?? ""}
-              onChange={(e) => patchSection("microscope", "total_dose", num(e.target.value))}
+              onChange={(e) => {
+                const v = e.target.value;
+                patchSection("microscope", "total_dose", v === "" ? null : Number(v));
+              }}
             />
           </label>
         </div>
@@ -433,14 +410,12 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete }:
               <option value="failed">Failed</option>
             </select>
           </label>
-          <label>
-            Failure mode
-            <input
-              value={form.outcome.failure_mode || ""}
-              onChange={(e) => patchSection("outcome", "failure_mode", e.target.value || null)}
-              placeholder="thick ice, tear, dry…"
-            />
-          </label>
+          <SelectOrOther
+            label="Failure mode"
+            value={form.outcome.failure_mode}
+            options={FAILURE_MODES}
+            onChange={(v) => patchSection("outcome", "failure_mode", v)}
+          />
         </div>
         <label>
           Outcome note
