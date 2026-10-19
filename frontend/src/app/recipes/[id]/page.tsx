@@ -5,8 +5,11 @@ import { useParams, useRouter } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
 import AppHeader from "@/components/AppHeader";
 import RecipeForm from "@/components/RecipeForm";
+import RecipeImages from "@/components/RecipeImages";
 import { deleteRecipe, getRecipe, updateRecipe } from "@/lib/api";
-import type { Recipe, RecipeInput } from "@/lib/types";
+import type { Recipe, RecipeImage, RecipeInput } from "@/lib/types";
+
+const EMPTY_IMAGES: RecipeImage[] = [];
 
 export default function EditRecipePage() {
   return (
@@ -75,6 +78,11 @@ function EditInner() {
     <main className="page">
       <h1 className="page-title">{recipe.name}</h1>
       <p className="page-sub">Edit recipe parameters and outcome</p>
+      <RecipeImages
+        recipeId={recipe.id}
+        images={recipe.images ?? EMPTY_IMAGES}
+        onChange={setRecipe}
+      />
       <RecipeForm
         initial={initial}
         submitLabel="Save changes"
