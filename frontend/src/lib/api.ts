@@ -4,20 +4,32 @@ import type { Recipe, RecipeInput } from "./types";
 /** Same-origin proxy — backend URL stays in server-only `API_URL` (next.config rewrites). */
 const API_BASE = "/api";
 
+function authHeaders(json = true): Headers {
+  const headers = new Headers();
+  if (json) headers.set("Content-Type", "application/json");
+  const token = getToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  return headers;
+}
+
+function handleUnauthorized(): never {
+  clearToken();
+  if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+    window.location.href = "/login";
+  }
+  throw new Error("Unauthorized");
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
-  headers.set("Content-Type", "application/json");
+  if (!headers.has("Content-Type") && !(init.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
   const token = getToken();
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
   const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
-  if (res.status === 401) {
-    clearToken();
-    if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
-      window.location.href = "/login";
-    }
-    throw new Error("Unauthorized");
-  }
+  if (res.status === 401) handleUnauthorized();
   if (!res.ok) {
     let detail = res.statusText;
     try {
@@ -67,4 +79,32 @@ export async function updateRecipe(id: string, body: RecipeInput): Promise<Recip
 
 export async function deleteRecipe(id: string): Promise<void> {
   return request(`/recipes/${id}`, { method: "DELETE" });
+}
+
+export async function uploadRecipeImage(
+  recipeId: string,
+  file: File,
+  opts?: { caption?: string; kind?: string },
+): Promise<Recipe> {
+  const body = new FormData();
+  body.append("file", file);
+  if (opts?.caption) body.append("caption", opts.caption);
+  if (opts?.kind) body.append("kind", opts.kind);
+  return request(`/recipes/${recipeId}/images`, {
+    method: "POST",
+    body,
+    headers: authHeaders(false),
+  });
+}
+
+export async function deleteRecipeImage(recipeId: string, imageId: string): Promise<Recipe> {
+  return request(`/recipes/${recipeId}/images/${imageId}`, { method: "DELETE" });
+}
+
+export async function fetchRecipeImageBlob(recipeId: string, imageId: string): Promise<Blob> {
+  const headers = authHeaders(false);
+  const res = await fetch(`${API_BASE}/recipes/${recipeId}/images/${imageId}`, { headers });
+  if (res.status === 401) handleUnauthorized();
+  if (!res.ok) throw new Error("Failed to load image");
+  return res.blob();
 }

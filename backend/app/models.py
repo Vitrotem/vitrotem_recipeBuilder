@@ -77,6 +77,16 @@ class OutcomeSettings(BaseModel):
     note: Optional[str] = None
 
 
+class RecipeImage(BaseModel):
+    id: str
+    filename: str
+    content_type: str
+    caption: Optional[str] = None
+    kind: Optional[str] = None
+    size_bytes: int
+    created_at: datetime
+
+
 class RecipeBase(BaseModel):
     name: str
     modality: Modality = Modality.cryo
@@ -104,6 +114,7 @@ class RecipeOut(RecipeBase):
     id: str
     created_at: datetime
     updated_at: datetime
+    images: list[RecipeImage] = Field(default_factory=list)
 
 
 class LoginRequest(BaseModel):

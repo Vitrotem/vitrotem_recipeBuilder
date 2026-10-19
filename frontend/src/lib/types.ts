@@ -57,6 +57,16 @@ export interface OutcomeSettings {
   note?: string | null;
 }
 
+export interface RecipeImage {
+  id: string;
+  filename: string;
+  content_type: string;
+  caption?: string | null;
+  kind?: string | null;
+  size_bytes: number;
+  created_at: string;
+}
+
 export interface Recipe {
   id: string;
   name: string;
@@ -71,11 +81,12 @@ export interface Recipe {
   graphene: GrapheneSettings;
   microscope: MicroscopeSettings;
   outcome: OutcomeSettings;
+  images?: RecipeImage[];
   created_at: string;
   updated_at: string;
 }
 
-export type RecipeInput = Omit<Recipe, "id" | "created_at" | "updated_at">;
+export type RecipeInput = Omit<Recipe, "id" | "created_at" | "updated_at" | "images">;
 
 export function emptyRecipe(): RecipeInput {
   return {
