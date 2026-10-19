@@ -12,7 +12,7 @@ export default function NewRecipePage() {
 
   async function handleSubmit(data: RecipeInput) {
     const created = await createRecipe(data);
-    router.push(`/recipes/${created.id}`);
+    router.push(`/recipes/${created.id}?saved=1`);
   }
 
   return (

@@ -19,9 +19,10 @@ type Props = {
   recipeId: string;
   images: RecipeImage[];
   onChange: (recipe: Recipe) => void;
+  readOnly?: boolean;
 };
 
-export default function RecipeImages({ recipeId, images, onChange }: Props) {
+export default function RecipeImages({ recipeId, images, onChange, readOnly = false }: Props) {
   const [caption, setCaption] = useState("");
   const [kind, setKind] = useState("micrograph");
   const [uploading, setUploading] = useState(false);
@@ -94,46 +95,50 @@ export default function RecipeImages({ recipeId, images, onChange }: Props) {
   return (
     <section className="form-section recipe-images">
       <h2>Images</h2>
-      <p className="images-hint">JPEG, PNG, or WebP — max 8 MB each. Stored in MongoDB GridFS.</p>
+      {!readOnly && (
+        <p className="images-hint">JPEG, PNG, or WebP — max 8 MB each.</p>
+      )}
       {error && <div className="alert">{error}</div>}
 
-      <div className="images-upload grid-2">
-        <label>
-          Kind
-          <select value={kind} onChange={(e) => setKind(e.target.value)}>
-            {IMAGE_KINDS.map((k) => (
-              <option key={k.value} value={k.value}>
-                {k.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Caption (optional)
-          <input
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-            placeholder="e.g. square 3, thin ice"
-          />
-        </label>
-        <label className="file-label">
-          Upload image
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            disabled={uploading}
-            onChange={(e) => {
-              const f = e.target.files?.[0] ?? null;
-              e.target.value = "";
-              void handleFile(f);
-            }}
-          />
-        </label>
-        {uploading && <p className="images-status">Uploading…</p>}
-      </div>
+      {!readOnly && (
+        <div className="images-upload grid-2">
+          <label>
+            Kind
+            <select value={kind} onChange={(e) => setKind(e.target.value)}>
+              {IMAGE_KINDS.map((k) => (
+                <option key={k.value} value={k.value}>
+                  {k.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Caption (optional)
+            <input
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+              placeholder="e.g. square 3, thin ice"
+            />
+          </label>
+          <label className="file-label">
+            Upload image
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              disabled={uploading}
+              onChange={(e) => {
+                const f = e.target.files?.[0] ?? null;
+                e.target.value = "";
+                void handleFile(f);
+              }}
+            />
+          </label>
+          {uploading && <p className="images-status">Uploading…</p>}
+        </div>
+      )}
 
       {images.length === 0 ? (
-        <p className="images-empty">No images yet.</p>
+        <p className="images-empty">{readOnly ? "No images attached." : "No images yet."}</p>
       ) : (
         <ul className="image-grid">
           {images.map((img) => (
@@ -150,13 +155,15 @@ export default function RecipeImages({ recipeId, images, onChange }: Props) {
                 <span>{img.caption || img.filename}</span>
                 <span className="image-size">{(img.size_bytes / 1024).toFixed(0)} KB</span>
               </div>
-              <button
-                type="button"
-                className="btn btn-danger btn-sm"
-                onClick={() => void handleDelete(img.id)}
-              >
-                Delete
-              </button>
+              {!readOnly && (
+                <button
+                  type="button"
+                  className="btn btn-danger btn-sm"
+                  onClick={() => void handleDelete(img.id)}
+                >
+                  Delete
+                </button>
+              )}
             </li>
           ))}
         </ul>
