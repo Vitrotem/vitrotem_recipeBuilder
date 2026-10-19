@@ -55,27 +55,6 @@ export default function RecipeView({ recipe }: { recipe: Recipe }) {
       />
 
       <Section
-        title="Plasma cleaner"
-        fields={[
-          <Field key="m" label="Model" value={plasma?.model} />,
-          <Field key="g" label="Gas" value={plasma?.gas} />,
-          <Field key="d" label="Duration (s)" value={plasma?.duration_s} />,
-          <Field key="p" label="Power (W)" value={plasma?.power} />,
-          <Field key="t" label="Target" value={plasma?.target} />,
-        ]}
-      />
-
-      <Section
-        title="NAIAD"
-        fields={[
-          <Field key="bt" label="Blot time (ms)" value={naiad?.blot_time_ms} />,
-          <Field key="rh" label="RH setpoint (%)" value={naiad?.rh_percent} />,
-          <Field key="bc" label="Blot count" value={naiad?.blot_count} />,
-          <Field key="h" label="Humidifier" value={naiad?.humidifier_enabled} />,
-        ]}
-      />
-
-      <Section
         title="Sample"
         fields={[
           <Field key="c" label="Class" value={sample?.sample_class} />,
@@ -97,6 +76,17 @@ export default function RecipeView({ recipe }: { recipe: Recipe }) {
       />
 
       <Section
+        title="Plasma cleaner"
+        fields={[
+          <Field key="m" label="Model" value={plasma?.model} />,
+          <Field key="g" label="Gas" value={plasma?.gas} />,
+          <Field key="d" label="Duration (s)" value={plasma?.duration_s} />,
+          <Field key="p" label="Power (W)" value={plasma?.power} />,
+          <Field key="t" label="Target" value={plasma?.target} />,
+        ]}
+      />
+
+      <Section
         title="Grid"
         fields={[
           <Field key="p" label="Product" value={grid?.product} />,
@@ -112,6 +102,16 @@ export default function RecipeView({ recipe }: { recipe: Recipe }) {
           <Field key="t" label="Top layer" value={graphene?.top_layer} />,
           <Field key="c" label="Cleaning method" value={graphene?.cleaning_method} />,
           <Field key="th" label="Target thickness (nm)" value={graphene?.target_thickness_nm} />,
+        ]}
+      />
+
+      <Section
+        title="NAIAD"
+        fields={[
+          <Field key="bt" label="Blot time (ms)" value={naiad?.blot_time_ms} />,
+          <Field key="rh" label="RH setpoint (%)" value={naiad?.rh_percent} />,
+          <Field key="bc" label="Blot count" value={naiad?.blot_count} />,
+          <Field key="h" label="Humidifier" value={naiad?.humidifier_enabled} />,
         ]}
       />
 
