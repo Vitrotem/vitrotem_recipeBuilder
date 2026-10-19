@@ -136,80 +136,6 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete }:
       </section>
 
       <section className="form-section">
-        <h2>Plasma cleaner</h2>
-        <div className="grid-2">
-          <SelectOrOther
-            label="Model"
-            value={form.plasma.model}
-            options={PLASMA_MODELS}
-            onChange={(v) => patchSection("plasma", "model", v)}
-          />
-          <SelectOrOther
-            label="Gas"
-            value={form.plasma.gas}
-            options={PLASMA_GASES}
-            onChange={(v) => patchSection("plasma", "gas", v)}
-          />
-          <SelectOrOtherNumber
-            label="Duration (s)"
-            value={form.plasma.duration_s}
-            options={PLASMA_DURATIONS_S}
-            onChange={(v) => patchSection("plasma", "duration_s", v)}
-          />
-          <SelectOrOtherNumber
-            label="Power (W)"
-            value={form.plasma.power}
-            options={PLASMA_POWER}
-            onChange={(v) => patchSection("plasma", "power", v)}
-          />
-          <label>
-            Target
-            <select
-              value={form.plasma.target || ""}
-              onChange={(e) => patchSection("plasma", "target", e.target.value || null)}
-            >
-              <option value="">—</option>
-              <option value="bottom">Bottom layer</option>
-              <option value="top">Top layer</option>
-              <option value="both">Both</option>
-            </select>
-          </label>
-        </div>
-      </section>
-
-      <section className="form-section">
-        <h2>NAIAD</h2>
-        <div className="grid-2">
-          <SelectOrOtherNumber
-            label="Blot time (ms)"
-            value={form.naiad.blot_time_ms}
-            options={BLOT_TIMES_MS}
-            onChange={(v) => patchSection("naiad", "blot_time_ms", v)}
-          />
-          <SelectOrOtherNumber
-            label="RH setpoint (%)"
-            value={form.naiad.rh_percent}
-            options={RH_PERCENT}
-            onChange={(v) => patchSection("naiad", "rh_percent", v)}
-          />
-          <SelectOrOtherNumber
-            label="Blot count"
-            value={form.naiad.blot_count}
-            options={BLOT_COUNTS}
-            onChange={(v) => patchSection("naiad", "blot_count", v)}
-          />
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={Boolean(form.naiad.humidifier_enabled)}
-              onChange={(e) => patchSection("naiad", "humidifier_enabled", e.target.checked)}
-            />
-            Humidifier enabled
-          </label>
-        </div>
-      </section>
-
-      <section className="form-section">
         <h2>Sample</h2>
         <div className="grid-2">
           <SelectOrOther
@@ -282,6 +208,48 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete }:
       </section>
 
       <section className="form-section">
+        <h2>Plasma cleaner</h2>
+        <div className="grid-2">
+          <SelectOrOther
+            label="Model"
+            value={form.plasma.model}
+            options={PLASMA_MODELS}
+            onChange={(v) => patchSection("plasma", "model", v)}
+          />
+          <SelectOrOther
+            label="Gas"
+            value={form.plasma.gas}
+            options={PLASMA_GASES}
+            onChange={(v) => patchSection("plasma", "gas", v)}
+          />
+          <SelectOrOtherNumber
+            label="Duration (s)"
+            value={form.plasma.duration_s}
+            options={PLASMA_DURATIONS_S}
+            onChange={(v) => patchSection("plasma", "duration_s", v)}
+          />
+          <SelectOrOtherNumber
+            label="Power (W)"
+            value={form.plasma.power}
+            options={PLASMA_POWER}
+            onChange={(v) => patchSection("plasma", "power", v)}
+          />
+          <label>
+            Target
+            <select
+              value={form.plasma.target || ""}
+              onChange={(e) => patchSection("plasma", "target", e.target.value || null)}
+            >
+              <option value="">—</option>
+              <option value="bottom">Bottom layer</option>
+              <option value="top">Top layer</option>
+              <option value="both">Both</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section className="form-section">
         <h2>Grid</h2>
         <div className="grid-2">
           <SelectOrOther
@@ -332,6 +300,38 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete }:
             options={TARGET_THICKNESS_NM}
             onChange={(v) => patchSection("graphene", "target_thickness_nm", v)}
           />
+        </div>
+      </section>
+
+      <section className="form-section">
+        <h2>NAIAD</h2>
+        <div className="grid-2">
+          <SelectOrOtherNumber
+            label="Blot time (ms)"
+            value={form.naiad.blot_time_ms}
+            options={BLOT_TIMES_MS}
+            onChange={(v) => patchSection("naiad", "blot_time_ms", v)}
+          />
+          <SelectOrOtherNumber
+            label="RH setpoint (%)"
+            value={form.naiad.rh_percent}
+            options={RH_PERCENT}
+            onChange={(v) => patchSection("naiad", "rh_percent", v)}
+          />
+          <SelectOrOtherNumber
+            label="Blot count"
+            value={form.naiad.blot_count}
+            options={BLOT_COUNTS}
+            onChange={(v) => patchSection("naiad", "blot_count", v)}
+          />
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={Boolean(form.naiad.humidifier_enabled)}
+              onChange={(e) => patchSection("naiad", "humidifier_enabled", e.target.checked)}
+            />
+            Humidifier enabled
+          </label>
         </div>
       </section>
 

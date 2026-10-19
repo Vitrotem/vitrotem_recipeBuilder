@@ -28,9 +28,12 @@ export default function RecipeImages({ recipeId, images, onChange, readOnly = fa
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previews, setPreviews] = useState<Record<string, string>>({});
+  const [lightboxId, setLightboxId] = useState<string | null>(null);
   const objectUrls = useRef<string[]>([]);
 
   const imageKey = images.map((i) => i.id).join(",");
+  const lightboxImage = images.find((i) => i.id === lightboxId) || null;
+  const lightboxSrc = lightboxId ? previews[lightboxId] : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -63,6 +66,20 @@ export default function RecipeImages({ recipeId, images, onChange, readOnly = fa
     };
   }, [recipeId, imageKey]);
 
+  useEffect(() => {
+    if (!lightboxId) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setLightboxId(null);
+    }
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [lightboxId]);
+
   async function handleFile(file: File | null) {
     if (!file) return;
     setError(null);
@@ -85,6 +102,7 @@ export default function RecipeImages({ recipeId, images, onChange, readOnly = fa
     if (!confirm("Delete this image?")) return;
     setError(null);
     try {
+      if (lightboxId === imageId) setLightboxId(null);
       const updated = await deleteRecipeImage(recipeId, imageId);
       onChange(updated);
     } catch (err) {
@@ -143,13 +161,19 @@ export default function RecipeImages({ recipeId, images, onChange, readOnly = fa
         <ul className="image-grid">
           {images.map((img) => (
             <li key={img.id} className="image-card">
-              <div className="image-thumb">
+              <button
+                type="button"
+                className="image-thumb image-thumb-btn"
+                disabled={!previews[img.id]}
+                onClick={() => setLightboxId(img.id)}
+                aria-label={`Preview ${img.caption || img.filename}`}
+              >
                 {previews[img.id] ? (
                   <img src={previews[img.id]} alt={img.caption || img.filename} />
                 ) : (
                   <span className="image-loading">Loading…</span>
                 )}
-              </div>
+              </button>
               <div className="image-meta">
                 <strong>{img.kind || "image"}</strong>
                 <span>{img.caption || img.filename}</span>
@@ -167,6 +191,38 @@ export default function RecipeImages({ recipeId, images, onChange, readOnly = fa
             </li>
           ))}
         </ul>
+      )}
+
+      {lightboxId && lightboxSrc && (
+        <div
+          className="image-lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image preview"
+          onClick={() => setLightboxId(null)}
+        >
+          <div className="image-lightbox-inner" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="image-lightbox-close"
+              aria-label="Close preview"
+              onClick={() => setLightboxId(null)}
+            >
+              ×
+            </button>
+            <img
+              src={lightboxSrc}
+              alt={lightboxImage?.caption || lightboxImage?.filename || "Preview"}
+            />
+            {(lightboxImage?.caption || lightboxImage?.kind) && (
+              <p className="image-lightbox-caption">
+                {lightboxImage.kind ? `${lightboxImage.kind}` : ""}
+                {lightboxImage.kind && lightboxImage.caption ? " · " : ""}
+                {lightboxImage.caption || ""}
+              </p>
+            )}
+          </div>
+        </div>
       )}
     </section>
   );
