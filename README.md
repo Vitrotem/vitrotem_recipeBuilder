@@ -26,7 +26,7 @@ uvicorn app.main:app --reload --port 8000
 cd frontend
 npm install
 cp .env.example .env.local
-# NEXT_PUBLIC_API_URL=http://localhost:8000
+# API_URL=http://localhost:8000  (server-only; browser calls /api/* via rewrite)
 npm run dev
 ```
 
@@ -60,11 +60,13 @@ API health: `https://vitrotem-recipes-api.fly.dev/health`
 ## Vercel frontend
 
 1. Import this repo in Vercel and set the **Root Directory** to `frontend`.
-2. Add environment variable:
+2. Add environment variable (**Config**, not `NEXT_PUBLIC_`):
 
-   `NEXT_PUBLIC_API_URL=https://vitrotem-recipes-api.fly.dev`
+   `API_URL=https://vitrotem-recipes-api.fly.dev`
 
-3. Deploy. Then update Fly `CORS_ORIGINS` to include the Vercel URL.
+3. Remove any old `NEXT_PUBLIC_API_URL` variable, then redeploy.
+
+The browser talks only to `/api/*` on your Vercel domain; Next.js rewrites those to Fly.
 
 ## Auth
 

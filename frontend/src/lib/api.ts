@@ -1,7 +1,8 @@
 import { getToken, clearToken } from "./auth";
 import type { Recipe, RecipeInput } from "./types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+/** Same-origin proxy — backend URL stays in server-only `API_URL` (next.config rewrites). */
+const API_BASE = "/api";
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
@@ -9,7 +10,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = getToken();
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
-  const res = await fetch(`${API_URL}${path}`, { ...init, headers });
+  const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
   if (res.status === 401) {
     clearToken();
     if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
