@@ -1109,6 +1109,10 @@ label .other-input {
   margin-bottom: 0.5rem;
 }
 
+.recipe-page-header .page-title {
+  color: var(--blue);
+}
+
 .recipe-page-header .page-sub {
   margin-bottom: 0;
 }
