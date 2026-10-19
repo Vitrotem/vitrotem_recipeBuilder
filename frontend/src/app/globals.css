@@ -1106,15 +1106,32 @@ label .other-input {
   background: rgba(196, 92, 92, 0.12);
 }
 
-.view-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.85rem 1.25rem;
+.recipe-view {
+  font-family: Calibri, Candara, Segoe, "Segoe UI", Optima, Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.recipe-view .view-section {
   margin: 0;
 }
 
+.recipe-view .view-section h2 {
+  font-family: Calibri, Candara, Segoe, "Segoe UI", Optima, Arial, sans-serif;
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.view-param-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
 @media (max-width: 700px) {
-  .view-grid {
+  .view-param-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1123,38 +1140,41 @@ label .other-input {
   }
 }
 
-.view-field dt {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin: 0 0 0.2rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+.view-param {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.85rem 1rem;
+  background: var(--white, var(--bg-elevated));
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(15, 40, 70, 0.04);
 }
 
-.view-field dd {
-  margin: 0;
-  color: var(--text);
-  font-size: 0.95rem;
+.view-param-wide {
+  grid-column: 1 / -1;
 }
 
-.view-notes {
-  margin-top: 1rem;
-  padding-top: 0.85rem;
-  border-top: 1px solid var(--border);
-}
-
-.view-notes h3 {
-  margin: 0 0 0.35rem;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+.view-param-label {
+  font-size: 0.78rem;
   font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.view-notes p {
-  margin: 0;
+.view-param-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.view-param-notes {
   white-space: pre-wrap;
+  font-weight: 600;
+  font-size: 1.1rem;
 }
 
 .toast {

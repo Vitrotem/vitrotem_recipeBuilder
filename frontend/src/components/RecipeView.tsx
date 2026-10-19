@@ -7,9 +7,9 @@ function Field({ label, value }: { label: string; value?: string | number | bool
   if (value === null || value === undefined || value === "") return null;
   const display = typeof value === "boolean" ? (value ? "Yes" : "No") : String(value);
   return (
-    <div className="view-field">
-      <dt>{label}</dt>
-      <dd>{display}</dd>
+    <div className="view-param">
+      <span className="view-param-label">{label}</span>
+      <span className="view-param-value">{display}</span>
     </div>
   );
 }
@@ -18,9 +18,9 @@ function Section({ title, fields }: { title: string; fields: ReactNode[] }) {
   const visible = fields.filter(Boolean);
   if (visible.length === 0) return null;
   return (
-    <section className="form-section view-section">
+    <section className="view-section">
       <h2>{title}</h2>
-      <dl className="view-grid">{visible}</dl>
+      <div className="view-param-grid">{visible}</div>
     </section>
   );
 }
@@ -30,24 +30,29 @@ export default function RecipeView({ recipe }: { recipe: Recipe }) {
 
   return (
     <div className="recipe-view">
-      <section className="form-section view-section">
-        <h2>Metadata</h2>
-        <dl className="view-grid">
-          <Field label="Modality" value={recipe.modality === "cryo" ? "Cryo-EM" : "Room temperature"} />
-          <Field label="Author" value={recipe.author} />
-          <Field label="Tags" value={recipe.tags?.length ? recipe.tags.join(", ") : null} />
+      <Section
+        title="Metadata"
+        fields={[
           <Field
+            key="mod"
+            label="Modality"
+            value={recipe.modality === "cryo" ? "Cryo-EM" : "Room temperature"}
+          />,
+          <Field key="author" label="Author" value={recipe.author} />,
+          <Field key="tags" label="Tags" value={recipe.tags?.length ? recipe.tags.join(", ") : null} />,
+          <Field
+            key="upd"
             label="Updated"
             value={recipe.updated_at ? new Date(recipe.updated_at).toLocaleString() : null}
-          />
-        </dl>
-        {recipe.notes ? (
-          <div className="view-notes">
-            <h3>Notes</h3>
-            <p>{recipe.notes}</p>
-          </div>
-        ) : null}
-      </section>
+          />,
+          recipe.notes ? (
+            <div key="notes" className="view-param view-param-wide">
+              <span className="view-param-label">Notes</span>
+              <span className="view-param-value view-param-notes">{recipe.notes}</span>
+            </div>
+          ) : null,
+        ]}
+      />
 
       <Section
         title="Plasma cleaner"
