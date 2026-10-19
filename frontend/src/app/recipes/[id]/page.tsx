@@ -121,13 +121,6 @@ function RecipeDetailInner() {
         </div>
       </div>
 
-      <RecipeImages
-        recipeId={recipe.id}
-        images={recipe.images ?? EMPTY_IMAGES}
-        onChange={setRecipe}
-        readOnly={mode === "view"}
-      />
-
       {mode === "view" ? (
         <RecipeView recipe={recipe} />
       ) : (
@@ -138,6 +131,13 @@ function RecipeDetailInner() {
           onSubmit={handleSubmit}
         />
       )}
+
+      <RecipeImages
+        recipeId={recipe.id}
+        images={recipe.images ?? EMPTY_IMAGES}
+        onChange={setRecipe}
+        readOnly={mode === "view"}
+      />
     </main>
   );
 }
