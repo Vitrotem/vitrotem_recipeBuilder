@@ -123,6 +123,7 @@ textarea {
   top: 0;
   z-index: 20;
   animation: header-in 0.55s var(--ease-out) both;
+  isolation: isolate;
 }
 
 @keyframes header-in {
@@ -321,16 +322,26 @@ textarea {
   color: var(--text-muted);
   position: relative;
   z-index: 1;
-  animation: pulse-soft 1.4s ease-in-out infinite;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
 }
 
-@keyframes pulse-soft {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-  50% {
-    opacity: 1;
+.page-loading::before {
+  content: "";
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 2.5px solid var(--ice);
+  border-top-color: var(--blue);
+  border-right-color: var(--cyan);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -559,6 +570,7 @@ label textarea:focus {
   place-items: center;
   padding: 1.5rem;
   position: relative;
+  z-index: 2;
   overflow: hidden;
   background:
     linear-gradient(160deg, var(--blue-bright) 0%, var(--blue) 45%, var(--blue-deep) 100%);
@@ -865,6 +877,10 @@ label select:hover,
 label textarea:hover {
   border-color: var(--border-strong);
   background: var(--white);
+}
+
+label .other-input {
+  margin-top: 0.4rem;
 }
 
 .checkbox-label {

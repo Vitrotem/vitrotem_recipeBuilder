@@ -49,7 +49,11 @@ function EditInner() {
   }
 
   if (!recipe) {
-    return <div className="page-loading">Loading recipe…</div>;
+    return (
+      <main className="page">
+        <div className="page-loading">Loading recipe…</div>
+      </main>
+    );
   }
 
   const initial: RecipeInput = {
