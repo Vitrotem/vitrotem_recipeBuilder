@@ -208,7 +208,7 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete }:
       </section>
 
       <section className="form-section">
-        <h2>Plasma cleaner</h2>
+        <h2>Plasma cleaner settings</h2>
         <div className="grid-2">
           <SelectOrOther
             label="Model"
@@ -304,7 +304,7 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete }:
       </section>
 
       <section className="form-section">
-        <h2>NAIAD</h2>
+        <h2>NAIAD settings</h2>
         <div className="grid-2">
           <SelectOrOtherNumber
             label="Blot time (ms)"

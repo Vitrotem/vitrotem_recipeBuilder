@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   deleteRecipeImage,
   fetchRecipeImageBlob,
@@ -193,37 +194,41 @@ export default function RecipeImages({ recipeId, images, onChange, readOnly = fa
         </ul>
       )}
 
-      {lightboxId && lightboxSrc && (
-        <div
-          className="image-lightbox"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Image preview"
-          onClick={() => setLightboxId(null)}
-        >
-          <div className="image-lightbox-inner" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              className="image-lightbox-close"
-              aria-label="Close preview"
-              onClick={() => setLightboxId(null)}
-            >
-              ×
-            </button>
-            <img
-              src={lightboxSrc}
-              alt={lightboxImage?.caption || lightboxImage?.filename || "Preview"}
-            />
-            {(lightboxImage?.caption || lightboxImage?.kind) && (
-              <p className="image-lightbox-caption">
-                {lightboxImage.kind ? `${lightboxImage.kind}` : ""}
-                {lightboxImage.kind && lightboxImage.caption ? " · " : ""}
-                {lightboxImage.caption || ""}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
+      {typeof document !== "undefined" &&
+        lightboxId &&
+        lightboxSrc &&
+        createPortal(
+          <div
+            className="image-lightbox"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Image preview"
+            onClick={() => setLightboxId(null)}
+          >
+            <div className="image-lightbox-inner" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                className="image-lightbox-close"
+                aria-label="Close preview"
+                onClick={() => setLightboxId(null)}
+              >
+                ×
+              </button>
+              <img
+                src={lightboxSrc}
+                alt={lightboxImage?.caption || lightboxImage?.filename || "Preview"}
+              />
+              {(lightboxImage?.caption || lightboxImage?.kind) && (
+                <p className="image-lightbox-caption">
+                  {lightboxImage.kind ? `${lightboxImage.kind}` : ""}
+                  {lightboxImage.kind && lightboxImage.caption ? " · " : ""}
+                  {lightboxImage.caption || ""}
+                </p>
+              )}
+            </div>
+          </div>,
+          document.body,
+        )}
     </section>
   );
 }

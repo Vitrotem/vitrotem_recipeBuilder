@@ -76,7 +76,7 @@ export default function RecipeView({ recipe }: { recipe: Recipe }) {
       />
 
       <Section
-        title="Plasma cleaner"
+        title="Plasma cleaner settings"
         fields={[
           <Field key="m" label="Model" value={plasma?.model} />,
           <Field key="g" label="Gas" value={plasma?.gas} />,
@@ -106,7 +106,7 @@ export default function RecipeView({ recipe }: { recipe: Recipe }) {
       />
 
       <Section
-        title="NAIAD"
+        title="NAIAD settings"
         fields={[
           <Field key="bt" label="Blot time (ms)" value={naiad?.blot_time_ms} />,
           <Field key="rh" label="RH setpoint (%)" value={naiad?.rh_percent} />,
