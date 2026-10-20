@@ -1,5 +1,5 @@
 import { getToken, clearToken } from "./auth";
-import type { Recipe, RecipeInput } from "./types";
+import type { EntryType, Recipe, RecipeInput } from "./types";
 
 /** Same-origin proxy — backend URL stays in server-only `API_URL` (next.config rewrites). */
 const API_BASE = "/api";
@@ -56,11 +56,13 @@ export async function listRecipes(params?: {
   q?: string;
   modality?: string;
   tag?: string;
+  entry_type?: EntryType;
 }): Promise<Recipe[]> {
   const sp = new URLSearchParams();
   if (params?.q) sp.set("q", params.q);
   if (params?.modality) sp.set("modality", params.modality);
   if (params?.tag) sp.set("tag", params.tag);
+  if (params?.entry_type) sp.set("entry_type", params.entry_type);
   const qs = sp.toString();
   return request(`/recipes${qs ? `?${qs}` : ""}`);
 }
@@ -79,6 +81,13 @@ export async function updateRecipe(id: string, body: RecipeInput): Promise<Recip
 
 export async function deleteRecipe(id: string): Promise<void> {
   return request(`/recipes/${id}`, { method: "DELETE" });
+}
+
+export async function setEntryType(id: string, entryType: EntryType): Promise<Recipe> {
+  return request(`/recipes/${id}/entry-type`, {
+    method: "PATCH",
+    body: JSON.stringify({ entry_type: entryType }),
+  });
 }
 
 export async function uploadRecipeImage(

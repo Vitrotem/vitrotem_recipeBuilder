@@ -3,23 +3,25 @@
 import { Suspense, useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
-import AppHeader from "@/components/AppHeader";
+import AppShell from "@/components/AppShell";
+import { useEntrySection } from "@/components/EntrySectionContext";
 import RecipeForm from "@/components/RecipeForm";
 import RecipeImages from "@/components/RecipeImages";
 import RecipeMenu from "@/components/RecipeMenu";
 import RecipeView from "@/components/RecipeView";
-import { deleteRecipe, getRecipe, updateRecipe } from "@/lib/api";
-import type { Recipe, RecipeImage, RecipeInput } from "@/lib/types";
+import { deleteRecipe, getRecipe, setEntryType, updateRecipe } from "@/lib/api";
+import { entryTypeLabel, type EntryType, type Recipe, type RecipeImage, type RecipeInput } from "@/lib/types";
 
 const EMPTY_IMAGES: RecipeImage[] = [];
 
 export default function RecipeDetailPage() {
   return (
     <AuthGuard>
-      <AppHeader />
-      <Suspense fallback={<div className="page-loading">Loading recipe…</div>}>
-        <RecipeDetailInner />
-      </Suspense>
+      <AppShell>
+        <Suspense fallback={<div className="page-loading">Loading…</div>}>
+          <RecipeDetailInner />
+        </Suspense>
+      </AppShell>
     </AuthGuard>
   );
 }
@@ -29,6 +31,7 @@ function RecipeDetailInner() {
   const searchParams = useSearchParams();
   const id = String(params.id);
   const router = useRouter();
+  const { setSection } = useEntrySection();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<"view" | "edit">(
@@ -43,11 +46,15 @@ function RecipeDetailInner() {
   }, [id]);
 
   useEffect(() => {
-    if (searchParams.get("saved") === "1") {
-      setToast("Recipe saved");
-      router.replace(`/recipes/${id}`);
-    }
-  }, [searchParams, id, router]);
+    if (!recipe) return;
+    setSection(recipe.entry_type ?? "recipe");
+  }, [recipe, setSection]);
+
+  useEffect(() => {
+    if (!recipe || searchParams.get("saved") !== "1") return;
+    setToast(`${entryTypeLabel(recipe.entry_type ?? "recipe")} saved`);
+    router.replace(`/recipes/${id}`);
+  }, [searchParams, id, router, recipe]);
 
   useEffect(() => {
     if (!toast) return;
@@ -56,15 +63,35 @@ function RecipeDetailInner() {
   }, [toast]);
 
   async function handleSubmit(data: RecipeInput) {
-    const updated = await updateRecipe(id, data);
+    const updated = await updateRecipe(id, {
+      ...data,
+      entry_type: recipe?.entry_type ?? data.entry_type ?? "recipe",
+    });
     setRecipe(updated);
     setMode("view");
-    setToast("Recipe saved");
+    setToast(`${entryTypeLabel(updated.entry_type)} saved`);
     router.replace(`/recipes/${id}`);
   }
 
+  async function handleConvert() {
+    if (!recipe) return;
+    const next: EntryType = recipe.entry_type === "log" ? "recipe" : "log";
+    const label =
+      next === "recipe" ? "Upgrade to recipe?" : "Downgrade to log?";
+    if (!confirm(label)) return;
+    const updated = await setEntryType(id, next);
+    setRecipe(updated);
+    setSection(next);
+    setToast(
+      next === "recipe" ? "Upgraded to recipe" : "Downgraded to log",
+    );
+  }
+
   async function handleDelete() {
-    if (!confirm("Delete this recipe? This cannot be undone.")) return;
+    const kind = recipe?.entry_type ?? "recipe";
+    if (!confirm(`Delete this ${entryTypeLabel(kind).toLowerCase()}? This cannot be undone.`)) {
+      return;
+    }
     await deleteRecipe(id);
     router.push("/");
   }
@@ -80,13 +107,17 @@ function RecipeDetailInner() {
   if (!recipe) {
     return (
       <main className="page">
-        <div className="page-loading">Loading recipe…</div>
+        <div className="page-loading">Loading…</div>
       </main>
     );
   }
 
+  const kind = recipe.entry_type ?? "recipe";
+  const noun = entryTypeLabel(kind).toLowerCase();
+
   const initial: RecipeInput = {
     name: recipe.name,
+    entry_type: kind,
     modality: recipe.modality,
     author: recipe.author,
     tags: recipe.tags,
@@ -108,7 +139,9 @@ function RecipeDetailInner() {
         <div>
           <h1 className="page-title">{recipe.name}</h1>
           <p className="page-sub">
-            {mode === "edit" ? "Edit recipe parameters and outcome" : "Recipe details"}
+            {mode === "edit"
+              ? `Edit ${noun} parameters and outcome`
+              : `${entryTypeLabel(kind)} details`}
           </p>
         </div>
         <div className="recipe-page-actions">
@@ -117,7 +150,12 @@ function RecipeDetailInner() {
               Cancel
             </button>
           )}
-          <RecipeMenu onEdit={() => setMode("edit")} onDelete={() => void handleDelete()} />
+          <RecipeMenu
+            entryType={kind}
+            onEdit={() => setMode("edit")}
+            onConvert={() => void handleConvert()}
+            onDelete={() => void handleDelete()}
+          />
         </div>
       </div>
 

@@ -138,7 +138,7 @@ textarea {
 }
 
 .app-header-inner {
-  max-width: 1080px;
+  max-width: 1240px;
   margin: 0 auto;
   padding: 0.9rem 1.25rem;
   display: flex;
@@ -209,6 +209,97 @@ textarea {
   display: flex;
   gap: 0.5rem;
   align-items: center;
+}
+
+/* ── App body + section nav ── */
+.app-body {
+  display: grid;
+  grid-template-columns: 11.5rem minmax(0, 1fr);
+  gap: 0;
+  max-width: 1240px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+  min-height: calc(100vh - 4.5rem);
+}
+
+.app-content {
+  min-width: 0;
+}
+
+.section-nav {
+  padding: 1.5rem 0.75rem 2rem 1.25rem;
+  position: sticky;
+  top: 4.25rem;
+  align-self: start;
+  animation: page-in 0.45s var(--ease-out) both;
+}
+
+.section-nav-label {
+  margin: 0 0 0.55rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.section-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.section-nav-item {
+  border: none;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition:
+    background 0.2s var(--ease-out),
+    color 0.2s var(--ease-out),
+    transform 0.2s var(--ease-out);
+}
+
+.section-nav-item:hover {
+  color: var(--navy);
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.section-nav-item.active {
+  color: var(--blue);
+  background: var(--accent-dim);
+  box-shadow: inset 3px 0 0 var(--blue);
+}
+
+@media (max-width: 720px) {
+  .app-body {
+    grid-template-columns: 1fr;
+  }
+
+  .section-nav {
+    position: static;
+    padding: 1rem 1.25rem 0;
+  }
+
+  .section-nav-list {
+    flex-direction: row;
+    gap: 0.35rem;
+  }
+
+  .section-nav-item {
+    flex: 1;
+    text-align: center;
+  }
+
+  .section-nav-item.active {
+    box-shadow: inset 0 -3px 0 var(--blue);
+  }
 }
 
 /* ── Buttons ── */
@@ -1151,7 +1242,7 @@ label .other-input {
   position: absolute;
   right: 0;
   top: calc(100% + 0.35rem);
-  min-width: 9rem;
+  min-width: 11.5rem;
   background: var(--white, var(--bg-elevated));
   border: 1.5px solid var(--border);
   border-radius: var(--radius);

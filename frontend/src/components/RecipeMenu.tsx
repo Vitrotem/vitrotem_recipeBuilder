@@ -1,15 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { EntryType } from "@/lib/types";
 
 type Props = {
+  entryType: EntryType;
   onEdit: () => void;
+  onConvert: () => void;
   onDelete: () => void;
 };
 
-export default function RecipeMenu({ onEdit, onDelete }: Props) {
+export default function RecipeMenu({ entryType, onEdit, onConvert, onDelete }: Props) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const convertLabel =
+    entryType === "log" ? "Upgrade to recipe" : "Downgrade to log";
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -31,7 +36,7 @@ export default function RecipeMenu({ onEdit, onDelete }: Props) {
       <button
         type="button"
         className="recipe-menu-trigger"
-        aria-label="Recipe actions"
+        aria-label="Actions"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
@@ -48,6 +53,16 @@ export default function RecipeMenu({ onEdit, onDelete }: Props) {
             }}
           >
             Edit
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onConvert();
+            }}
+          >
+            {convertLabel}
           </button>
           <button
             type="button"
