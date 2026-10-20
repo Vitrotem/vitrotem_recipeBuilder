@@ -17,7 +17,7 @@ from app.storage import get_fs
 router = APIRouter(prefix="/recipes", tags=["recipes"])
 
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
-MAX_IMAGE_BYTES = 8 * 1024 * 1024
+MAX_IMAGE_BYTES = 5 * 1024 * 1024
 
 
 def _parse_oid(value: str, label: str = "Resource") -> ObjectId:
@@ -233,7 +233,7 @@ async def upload_recipe_image(
     if not data:
         raise HTTPException(status_code=400, detail="Empty file")
     if len(data) > MAX_IMAGE_BYTES:
-        raise HTTPException(status_code=400, detail="Image must be 8 MB or smaller")
+        raise HTTPException(status_code=400, detail="Image must be 5 MB or smaller")
 
     filename = file.filename or "image"
     fs = get_fs()

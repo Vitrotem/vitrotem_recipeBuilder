@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { RecipeInput } from "@/lib/types";
 import SelectOrOther from "./SelectOrOther";
 import SelectOrOtherNumber from "./SelectOrOtherNumber";
@@ -13,6 +13,7 @@ import {
   FAILURE_MODES,
   GRAPHENE_CLEANING,
   GRAPHENE_LAYERS,
+  GRAPHENE_TRANSFER_METHODS,
   GRID_MESH,
   GRID_PRODUCTS,
   HOLE_SIZES_UM,
@@ -36,9 +37,10 @@ type Props = {
   submitLabel: string;
   onSubmit: (data: RecipeInput) => Promise<void>;
   onDelete?: () => Promise<void>;
+  children?: ReactNode;
 };
 
-export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete }: Props) {
+export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete, children }: Props) {
   const [form, setForm] = useState<RecipeInput>(initial);
   const [tagsText, setTagsText] = useState((initial.tags || []).join(", "));
   const [error, setError] = useState<string | null>(null);
@@ -109,7 +111,7 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete }:
               onChange={(e) => patch("modality", e.target.value as RecipeInput["modality"])}
             >
               <option value="cryo">Cryo-EM</option>
-              <option value="rt">Room temperature</option>
+              <option value="rt">Room Temperature TEM</option>
             </select>
           </label>
           <label>
@@ -283,6 +285,30 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete }:
             onChange={(v) => patchSection("graphene", "bottom_layer", v)}
           />
           <SelectOrOther
+            label="Bottom layer → Transfer method"
+            value={form.graphene.bottom_layer_transfer_method}
+            options={GRAPHENE_TRANSFER_METHODS}
+            onChange={(v) => patchSection("graphene", "bottom_layer_transfer_method", v)}
+          />
+          <label>
+            Bottom layer → Vendor
+            <input
+              value={form.graphene.bottom_layer_vendor || ""}
+              onChange={(e) =>
+                patchSection("graphene", "bottom_layer_vendor", e.target.value || null)
+              }
+            />
+          </label>
+          <label>
+            Graphene VitroTEM batch #
+            <input
+              value={form.graphene.vitrotem_batch || ""}
+              onChange={(e) =>
+                patchSection("graphene", "vitrotem_batch", e.target.value || null)
+              }
+            />
+          </label>
+          <SelectOrOther
             label="Top layer"
             value={form.graphene.top_layer}
             options={GRAPHENE_LAYERS}
@@ -426,6 +452,8 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete }:
           />
         </label>
       </section>
+
+      {children}
 
       <div className="form-actions">
         <button type="submit" className="btn btn-primary" disabled={saving}>

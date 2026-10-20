@@ -61,6 +61,9 @@ class GridSettings(BaseModel):
 
 class GrapheneSettings(BaseModel):
     bottom_layer: Optional[str] = None
+    bottom_layer_transfer_method: Optional[str] = None
+    bottom_layer_vendor: Optional[str] = None
+    vitrotem_batch: Optional[str] = None
     top_layer: Optional[str] = None
     cleaning_method: Optional[str] = None
     target_thickness_nm: Optional[float] = None

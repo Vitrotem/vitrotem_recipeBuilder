@@ -7,6 +7,13 @@ import {
   fetchRecipeImageBlob,
   uploadRecipeImage,
 } from "@/lib/api";
+import {
+  ACCEPTED_IMAGE_TYPES,
+  MAX_IMAGE_LABEL,
+  createPendingImage,
+  validateImageFile,
+  type PendingImage,
+} from "@/lib/imageUpload";
 import type { Recipe, RecipeImage } from "@/lib/types";
 
 const IMAGE_KINDS = [
@@ -16,14 +23,26 @@ const IMAGE_KINDS = [
   { value: "other", label: "Other" },
 ];
 
+const ACCEPT = ACCEPTED_IMAGE_TYPES.join(",");
+
 type Props = {
-  recipeId: string;
-  images: RecipeImage[];
-  onChange: (recipe: Recipe) => void;
+  recipeId?: string;
+  images?: RecipeImage[];
+  onChange?: (recipe: Recipe) => void;
+  pending?: PendingImage[];
+  onPendingChange?: (pending: PendingImage[]) => void;
   readOnly?: boolean;
 };
 
-export default function RecipeImages({ recipeId, images, onChange, readOnly = false }: Props) {
+export default function RecipeImages({
+  recipeId,
+  images = [],
+  onChange,
+  pending = [],
+  onPendingChange,
+  readOnly = false,
+}: Props) {
+  const isPendingMode = Boolean(onPendingChange) && !recipeId;
   const [caption, setCaption] = useState("");
   const [kind, setKind] = useState("micrograph");
   const [uploading, setUploading] = useState(false);
@@ -33,17 +52,24 @@ export default function RecipeImages({ recipeId, images, onChange, readOnly = fa
   const objectUrls = useRef<string[]>([]);
 
   const imageKey = images.map((i) => i.id).join(",");
-  const lightboxImage = images.find((i) => i.id === lightboxId) || null;
-  const lightboxSrc = lightboxId ? previews[lightboxId] : null;
+  const lightboxImage = isPendingMode
+    ? pending.find((i) => i.localId === lightboxId) || null
+    : images.find((i) => i.id === lightboxId) || null;
+  const lightboxSrc = lightboxId
+    ? isPendingMode
+      ? pending.find((i) => i.localId === lightboxId)?.previewUrl
+      : previews[lightboxId]
+    : null;
 
   useEffect(() => {
+    if (isPendingMode || !recipeId) return;
     let cancelled = false;
 
     async function loadPreviews() {
       const next: Record<string, string> = {};
       for (const img of images) {
         try {
-          const blob = await fetchRecipeImageBlob(recipeId, img.id);
+          const blob = await fetchRecipeImageBlob(recipeId!, img.id);
           if (cancelled) return;
           const url = URL.createObjectURL(blob);
           objectUrls.current.push(url);
@@ -65,7 +91,7 @@ export default function RecipeImages({ recipeId, images, onChange, readOnly = fa
       objectUrls.current.forEach((u) => URL.revokeObjectURL(u));
       objectUrls.current = [];
     };
-  }, [recipeId, imageKey]);
+  }, [recipeId, imageKey, isPendingMode]);
 
   useEffect(() => {
     if (!lightboxId) return;
@@ -84,6 +110,25 @@ export default function RecipeImages({ recipeId, images, onChange, readOnly = fa
   async function handleFile(file: File | null) {
     if (!file) return;
     setError(null);
+
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    if (isPendingMode && onPendingChange) {
+      const next = createPendingImage(file, {
+        caption: caption.trim() || undefined,
+        kind: kind || undefined,
+      });
+      onPendingChange([...pending, next]);
+      setCaption("");
+      return;
+    }
+
+    if (!recipeId || !onChange) return;
+
     setUploading(true);
     try {
       const updated = await uploadRecipeImage(recipeId, file, {
@@ -102,6 +147,17 @@ export default function RecipeImages({ recipeId, images, onChange, readOnly = fa
   async function handleDelete(imageId: string) {
     if (!confirm("Delete this image?")) return;
     setError(null);
+
+    if (isPendingMode && onPendingChange) {
+      if (lightboxId === imageId) setLightboxId(null);
+      const target = pending.find((p) => p.localId === imageId);
+      if (target) URL.revokeObjectURL(target.previewUrl);
+      onPendingChange(pending.filter((p) => p.localId !== imageId));
+      return;
+    }
+
+    if (!recipeId || !onChange) return;
+
     try {
       if (lightboxId === imageId) setLightboxId(null);
       const updated = await deleteRecipeImage(recipeId, imageId);
@@ -111,11 +167,16 @@ export default function RecipeImages({ recipeId, images, onChange, readOnly = fa
     }
   }
 
+  const empty = isPendingMode ? pending.length === 0 : images.length === 0;
+
   return (
     <section className="form-section recipe-images">
       <h2>Images</h2>
       {!readOnly && (
-        <p className="images-hint">JPEG, PNG, or WebP — max 8 MB each.</p>
+        <p className="images-hint">
+          JPEG, PNG, or WebP — max {MAX_IMAGE_LABEL} each
+          {isPendingMode ? ". Uploaded when you save." : "."}
+        </p>
       )}
       {error && <div className="alert">{error}</div>}
 
@@ -143,7 +204,7 @@ export default function RecipeImages({ recipeId, images, onChange, readOnly = fa
             Upload image
             <input
               type="file"
-              accept="image/jpeg,image/png,image/webp"
+              accept={ACCEPT}
               disabled={uploading}
               onChange={(e) => {
                 const f = e.target.files?.[0] ?? null;
@@ -156,41 +217,68 @@ export default function RecipeImages({ recipeId, images, onChange, readOnly = fa
         </div>
       )}
 
-      {images.length === 0 ? (
+      {empty ? (
         <p className="images-empty">{readOnly ? "No images attached." : "No images yet."}</p>
       ) : (
         <ul className="image-grid">
-          {images.map((img) => (
-            <li key={img.id} className="image-card">
-              <button
-                type="button"
-                className="image-thumb image-thumb-btn"
-                disabled={!previews[img.id]}
-                onClick={() => setLightboxId(img.id)}
-                aria-label={`Preview ${img.caption || img.filename}`}
-              >
-                {previews[img.id] ? (
-                  <img src={previews[img.id]} alt={img.caption || img.filename} />
-                ) : (
-                  <span className="image-loading">Loading…</span>
-                )}
-              </button>
-              <div className="image-meta">
-                <strong>{img.kind || "image"}</strong>
-                <span>{img.caption || img.filename}</span>
-                <span className="image-size">{(img.size_bytes / 1024).toFixed(0)} KB</span>
-              </div>
-              {!readOnly && (
-                <button
-                  type="button"
-                  className="btn btn-danger btn-sm"
-                  onClick={() => void handleDelete(img.id)}
-                >
-                  Delete
-                </button>
-              )}
-            </li>
-          ))}
+          {isPendingMode
+            ? pending.map((img) => (
+                <li key={img.localId} className="image-card">
+                  <button
+                    type="button"
+                    className="image-thumb image-thumb-btn"
+                    onClick={() => setLightboxId(img.localId)}
+                    aria-label={`Preview ${img.caption || img.file.name}`}
+                  >
+                    <img src={img.previewUrl} alt={img.caption || img.file.name} />
+                  </button>
+                  <div className="image-meta">
+                    <strong>{img.kind || "image"}</strong>
+                    <span>{img.caption || img.file.name}</span>
+                    <span className="image-size">{(img.file.size / 1024).toFixed(0)} KB</span>
+                  </div>
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      onClick={() => void handleDelete(img.localId)}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </li>
+              ))
+            : images.map((img) => (
+                <li key={img.id} className="image-card">
+                  <button
+                    type="button"
+                    className="image-thumb image-thumb-btn"
+                    disabled={!previews[img.id]}
+                    onClick={() => setLightboxId(img.id)}
+                    aria-label={`Preview ${img.caption || img.filename}`}
+                  >
+                    {previews[img.id] ? (
+                      <img src={previews[img.id]} alt={img.caption || img.filename} />
+                    ) : (
+                      <span className="image-loading">Loading…</span>
+                    )}
+                  </button>
+                  <div className="image-meta">
+                    <strong>{img.kind || "image"}</strong>
+                    <span>{img.caption || img.filename}</span>
+                    <span className="image-size">{(img.size_bytes / 1024).toFixed(0)} KB</span>
+                  </div>
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      onClick={() => void handleDelete(img.id)}
+                    >
+                      Delete
+                    </button>
+                  )}
+                </li>
+              ))}
         </ul>
       )}
 
@@ -216,15 +304,25 @@ export default function RecipeImages({ recipeId, images, onChange, readOnly = fa
               </button>
               <img
                 src={lightboxSrc}
-                alt={lightboxImage?.caption || lightboxImage?.filename || "Preview"}
+                alt={
+                  isPendingMode
+                    ? (lightboxImage as PendingImage | null)?.caption ||
+                      (lightboxImage as PendingImage | null)?.file.name ||
+                      "Preview"
+                    : (lightboxImage as RecipeImage | null)?.caption ||
+                      (lightboxImage as RecipeImage | null)?.filename ||
+                      "Preview"
+                }
               />
-              {(lightboxImage?.caption || lightboxImage?.kind) && (
-                <p className="image-lightbox-caption">
-                  {lightboxImage.kind ? `${lightboxImage.kind}` : ""}
-                  {lightboxImage.kind && lightboxImage.caption ? " · " : ""}
-                  {lightboxImage.caption || ""}
-                </p>
-              )}
+              {lightboxImage &&
+                (("caption" in lightboxImage && lightboxImage.caption) ||
+                  ("kind" in lightboxImage && lightboxImage.kind)) && (
+                  <p className="image-lightbox-caption">
+                    {lightboxImage.kind ? `${lightboxImage.kind}` : ""}
+                    {lightboxImage.kind && lightboxImage.caption ? " · " : ""}
+                    {lightboxImage.caption || ""}
+                  </p>
+                )}
             </div>
           </div>,
           document.body,

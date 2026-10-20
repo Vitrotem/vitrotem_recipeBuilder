@@ -42,6 +42,9 @@ export interface GridSettings {
 
 export interface GrapheneSettings {
   bottom_layer?: string | null;
+  bottom_layer_transfer_method?: string | null;
+  bottom_layer_vendor?: string | null;
+  vitrotem_batch?: string | null;
   top_layer?: string | null;
   cleaning_method?: string | null;
   target_thickness_nm?: number | null;
