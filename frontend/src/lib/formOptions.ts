@@ -195,6 +195,8 @@ export const GRAPHENE_LAYERS = [
   "None / open face",
 ] as const;
 
+export const GRAPHENE_TRANSFER_METHODS = ["Polymer", "Loop assisted"] as const;
+
 export const GRAPHENE_CLEANING = [
   "None / as-received",
   "O₂ plasma (gentle)",

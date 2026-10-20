@@ -36,7 +36,7 @@ export default function RecipeView({ recipe }: { recipe: Recipe }) {
           <Field
             key="mod"
             label="Modality"
-            value={recipe.modality === "cryo" ? "Cryo-EM" : "Room temperature"}
+            value={recipe.modality === "cryo" ? "Cryo-EM" : "Room Temperature TEM"}
           />,
           <Field key="author" label="Author" value={recipe.author} />,
           <Field key="tags" label="Tags" value={recipe.tags?.length ? recipe.tags.join(", ") : null} />,
@@ -99,6 +99,13 @@ export default function RecipeView({ recipe }: { recipe: Recipe }) {
         title="Graphene"
         fields={[
           <Field key="b" label="Bottom layer" value={graphene?.bottom_layer} />,
+          <Field
+            key="btm"
+            label="Bottom layer → Transfer method"
+            value={graphene?.bottom_layer_transfer_method}
+          />,
+          <Field key="bv" label="Bottom layer → Vendor" value={graphene?.bottom_layer_vendor} />,
+          <Field key="batch" label="Graphene VitroTEM batch #" value={graphene?.vitrotem_batch} />,
           <Field key="t" label="Top layer" value={graphene?.top_layer} />,
           <Field key="c" label="Cleaning method" value={graphene?.cleaning_method} />,
           <Field key="th" label="Target thickness (nm)" value={graphene?.target_thickness_nm} />,

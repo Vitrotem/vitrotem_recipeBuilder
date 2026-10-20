@@ -69,7 +69,7 @@ function RecipeList() {
         <select value={modality} onChange={(e) => setModality(e.target.value)}>
           <option value="">All modalities</option>
           <option value="cryo">Cryo-EM</option>
-          <option value="rt">Room temperature</option>
+          <option value="rt">Room Temperature TEM</option>
         </select>
       </div>
 
