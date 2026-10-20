@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type DragEvent } from "react";
 import { createPortal } from "react-dom";
 import {
   deleteRecipeImage,
@@ -47,9 +47,12 @@ export default function RecipeImages({
   const [kind, setKind] = useState("micrograph");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState(false);
   const [previews, setPreviews] = useState<Record<string, string>>({});
   const [lightboxId, setLightboxId] = useState<string | null>(null);
   const objectUrls = useRef<string[]>([]);
+  const dragDepth = useRef(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const imageKey = images.map((i) => i.id).join(",");
   const lightboxImage = isPendingMode
@@ -107,22 +110,29 @@ export default function RecipeImages({
     };
   }, [lightboxId]);
 
-  async function handleFile(file: File | null) {
-    if (!file) return;
+  async function handleFiles(fileList: FileList | File[] | null) {
+    const files = fileList ? Array.from(fileList) : [];
+    if (!files.length || uploading) return;
     setError(null);
 
-    const validationError = validateImageFile(file);
-    if (validationError) {
-      setError(validationError);
-      return;
+    const valid: File[] = [];
+    for (const file of files) {
+      const validationError = validateImageFile(file);
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
+      valid.push(file);
     }
 
+    const opts = {
+      caption: caption.trim() || undefined,
+      kind: kind || undefined,
+    };
+
     if (isPendingMode && onPendingChange) {
-      const next = createPendingImage(file, {
-        caption: caption.trim() || undefined,
-        kind: kind || undefined,
-      });
-      onPendingChange([...pending, next]);
+      const next = valid.map((file) => createPendingImage(file, opts));
+      onPendingChange([...pending, ...next]);
       setCaption("");
       return;
     }
@@ -131,17 +141,48 @@ export default function RecipeImages({
 
     setUploading(true);
     try {
-      const updated = await uploadRecipeImage(recipeId, file, {
-        caption: caption.trim() || undefined,
-        kind: kind || undefined,
-      });
+      let updated: Recipe | null = null;
+      for (const file of valid) {
+        updated = await uploadRecipeImage(recipeId, file, opts);
+      }
       setCaption("");
-      onChange(updated);
+      if (updated) onChange(updated);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setUploading(false);
     }
+  }
+
+  function onDragEnter(e: DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepth.current += 1;
+    if (e.dataTransfer.types.includes("Files")) setDragActive(true);
+  }
+
+  function onDragLeave(e: DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepth.current -= 1;
+    if (dragDepth.current <= 0) {
+      dragDepth.current = 0;
+      setDragActive(false);
+    }
+  }
+
+  function onDragOver(e: DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "copy";
+  }
+
+  function onDrop(e: DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepth.current = 0;
+    setDragActive(false);
+    void handleFiles(e.dataTransfer.files);
   }
 
   async function handleDelete(imageId: string) {
@@ -181,39 +222,65 @@ export default function RecipeImages({
       {error && <div className="alert">{error}</div>}
 
       {!readOnly && (
-        <div className="images-upload grid-2">
-          <label>
-            Kind
-            <select value={kind} onChange={(e) => setKind(e.target.value)}>
-              {IMAGE_KINDS.map((k) => (
-                <option key={k.value} value={k.value}>
-                  {k.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Caption (optional)
+        <div className="images-upload">
+          <div className="grid-2">
+            <label>
+              Kind
+              <select value={kind} onChange={(e) => setKind(e.target.value)}>
+                {IMAGE_KINDS.map((k) => (
+                  <option key={k.value} value={k.value}>
+                    {k.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Caption (optional)
+              <input
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                placeholder="e.g. square 3, thin ice"
+              />
+            </label>
+          </div>
+          <div
+            className={`image-dropzone${dragActive ? " is-dragging" : ""}${uploading ? " is-disabled" : ""}`}
+            role="button"
+            tabIndex={uploading ? -1 : 0}
+            aria-label="Upload images by dragging or clicking to browse"
+            onClick={() => {
+              if (!uploading) fileInputRef.current?.click();
+            }}
+            onKeyDown={(e) => {
+              if (uploading) return;
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
+            onDragEnter={onDragEnter}
+            onDragLeave={onDragLeave}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
+          >
             <input
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              placeholder="e.g. square 3, thin ice"
-            />
-          </label>
-          <label className="file-label">
-            Upload image
-            <input
+              ref={fileInputRef}
               type="file"
               accept={ACCEPT}
+              multiple
               disabled={uploading}
+              className="image-dropzone-input"
               onChange={(e) => {
-                const f = e.target.files?.[0] ?? null;
+                const files = e.target.files;
                 e.target.value = "";
-                void handleFile(f);
+                void handleFiles(files);
               }}
             />
-          </label>
-          {uploading && <p className="images-status">Uploading…</p>}
+            <span className="image-dropzone-title">
+              {uploading ? "Uploading…" : dragActive ? "Drop to upload" : "Drag images here"}
+            </span>
+            <span className="image-dropzone-sub">or click to browse</span>
+          </div>
         </div>
       )}
 
