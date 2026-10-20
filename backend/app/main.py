@@ -20,10 +20,15 @@ async def seed_admin() -> None:
                 "password_hash": hash_password(settings.admin_password),
             }
         )
+    await db.recipes.update_many(
+        {"entry_type": {"$exists": False}},
+        {"$set": {"entry_type": "recipe"}},
+    )
     await db.recipes.create_index("name")
     await db.recipes.create_index("modality")
     await db.recipes.create_index("tags")
     await db.recipes.create_index("updated_at")
+    await db.recipes.create_index("entry_type")
 
 
 @asynccontextmanager

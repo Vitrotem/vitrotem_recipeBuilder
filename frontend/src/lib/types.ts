@@ -1,6 +1,12 @@
+export type EntryType = "recipe" | "log";
 export type Modality = "cryo" | "rt";
 export type PlasmaTarget = "bottom" | "top" | "both";
 export type OutcomeStatus = "good" | "partial" | "failed";
+
+export function entryTypeLabel(type: EntryType, plural = false): string {
+  if (type === "log") return plural ? "Logs" : "Log";
+  return plural ? "Recipes" : "Recipe";
+}
 
 export interface PlasmaSettings {
   model?: string | null;
@@ -70,6 +76,7 @@ export interface RecipeImage {
 export interface Recipe {
   id: string;
   name: string;
+  entry_type: EntryType;
   modality: Modality;
   author?: string | null;
   tags: string[];
@@ -88,9 +95,10 @@ export interface Recipe {
 
 export type RecipeInput = Omit<Recipe, "id" | "created_at" | "updated_at" | "images">;
 
-export function emptyRecipe(): RecipeInput {
+export function emptyRecipe(entryType: EntryType = "recipe"): RecipeInput {
   return {
     name: "",
+    entry_type: entryType,
     modality: "cryo",
     author: "",
     tags: [],

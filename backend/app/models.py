@@ -5,6 +5,11 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
+class EntryType(str, Enum):
+    recipe = "recipe"
+    log = "log"
+
+
 class Modality(str, Enum):
     cryo = "cryo"
     rt = "rt"
@@ -89,6 +94,7 @@ class RecipeImage(BaseModel):
 
 class RecipeBase(BaseModel):
     name: str
+    entry_type: EntryType = EntryType.recipe
     modality: Modality = Modality.cryo
     author: Optional[str] = None
     tags: list[str] = Field(default_factory=list)
@@ -108,6 +114,10 @@ class RecipeCreate(RecipeBase):
 
 class RecipeUpdate(RecipeBase):
     pass
+
+
+class EntryTypeUpdate(BaseModel):
+    entry_type: EntryType
 
 
 class RecipeOut(RecipeBase):

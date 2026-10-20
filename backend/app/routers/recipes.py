@@ -11,7 +11,7 @@ from pymongo import ReturnDocument
 
 from app.auth import get_current_user
 from app.database import get_db
-from app.models import RecipeCreate, RecipeImage, RecipeOut, RecipeUpdate
+from app.models import EntryTypeUpdate, RecipeCreate, RecipeImage, RecipeOut, RecipeUpdate
 from app.storage import get_fs
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
@@ -48,6 +48,7 @@ def _serialize(doc: dict[str, Any]) -> RecipeOut:
     return RecipeOut(
         id=str(doc["_id"]),
         name=doc["name"],
+        entry_type=doc.get("entry_type") or "recipe",
         modality=doc.get("modality", "cryo"),
         author=doc.get("author"),
         tags=doc.get("tags") or [],
@@ -84,6 +85,7 @@ async def list_recipes(
     q: str | None = Query(None),
     modality: str | None = Query(None),
     tag: str | None = Query(None),
+    entry_type: str | None = Query(None),
     _user: str = Depends(get_current_user),
 ) -> list[RecipeOut]:
     db = get_db()
@@ -92,13 +94,28 @@ async def list_recipes(
         filters["modality"] = modality
     if tag:
         filters["tags"] = tag
+
+    and_clauses: list[dict[str, Any]] = []
+    if entry_type == "log":
+        and_clauses.append({"entry_type": "log"})
+    elif entry_type == "recipe":
+        and_clauses.append(
+            {"$or": [{"entry_type": "recipe"}, {"entry_type": {"$exists": False}}]}
+        )
     if q:
-        filters["$or"] = [
-            {"name": {"$regex": q, "$options": "i"}},
-            {"author": {"$regex": q, "$options": "i"}},
-            {"notes": {"$regex": q, "$options": "i"}},
-            {"sample.subtype": {"$regex": q, "$options": "i"}},
-        ]
+        and_clauses.append(
+            {
+                "$or": [
+                    {"name": {"$regex": q, "$options": "i"}},
+                    {"author": {"$regex": q, "$options": "i"}},
+                    {"notes": {"$regex": q, "$options": "i"}},
+                    {"sample.subtype": {"$regex": q, "$options": "i"}},
+                ]
+            }
+        )
+    if and_clauses:
+        filters["$and"] = and_clauses
+
     cursor = db.recipes.find(filters).sort("updated_at", -1)
     return [_serialize(doc) async for doc in cursor]
 
@@ -146,6 +163,29 @@ async def update_recipe(
     result = await db.recipes.find_one_and_update(
         {"_id": oid},
         {"$set": update},
+        return_document=ReturnDocument.AFTER,
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+    return _serialize(result)
+
+
+@router.patch("/{recipe_id}/entry-type", response_model=RecipeOut)
+async def set_entry_type(
+    recipe_id: str,
+    body: EntryTypeUpdate,
+    _user: str = Depends(get_current_user),
+) -> RecipeOut:
+    db = get_db()
+    oid = _parse_oid(recipe_id, "Recipe")
+    result = await db.recipes.find_one_and_update(
+        {"_id": oid},
+        {
+            "$set": {
+                "entry_type": body.entry_type.value,
+                "updated_at": datetime.now(timezone.utc),
+            }
+        },
         return_document=ReturnDocument.AFTER,
     )
     if not result:

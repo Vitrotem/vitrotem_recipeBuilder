@@ -3,25 +3,31 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import AuthGuard from "@/components/AuthGuard";
-import AppHeader from "@/components/AppHeader";
+import AppShell from "@/components/AppShell";
+import { useEntrySection } from "@/components/EntrySectionContext";
 import { listRecipes } from "@/lib/api";
-import type { Recipe } from "@/lib/types";
+import { entryTypeLabel, type Recipe } from "@/lib/types";
 
 export default function HomePage() {
   return (
     <AuthGuard>
-      <AppHeader />
-      <RecipeList />
+      <AppShell>
+        <RecipeList />
+      </AppShell>
     </AuthGuard>
   );
 }
 
 function RecipeList() {
+  const { section } = useEntrySection();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [q, setQ] = useState("");
   const [modality, setModality] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const noun = entryTypeLabel(section);
+  const nounPlural = entryTypeLabel(section, true).toLowerCase();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -30,14 +36,15 @@ function RecipeList() {
       const data = await listRecipes({
         q: q || undefined,
         modality: modality || undefined,
+        entry_type: section,
       });
       setRecipes(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load recipes");
+      setError(err instanceof Error ? err.message : `Failed to load ${nounPlural}`);
     } finally {
       setLoading(false);
     }
-  }, [q, modality]);
+  }, [q, modality, section, nounPlural]);
 
   useEffect(() => {
     const t = setTimeout(load, 200);
@@ -46,8 +53,12 @@ function RecipeList() {
 
   return (
     <main className="page">
-      <h1 className="page-title">Recipes</h1>
-      <p className="page-sub">Graphene liquid cell protocols for cryo-EM and room-temperature EM</p>
+      <h1 className="page-title">{entryTypeLabel(section, true)}</h1>
+      <p className="page-sub">
+        {section === "log"
+          ? "Experimental notes and runs — upgrade any log to a recipe when it is ready"
+          : "Graphene liquid cell protocols for cryo-EM and room-temperature EM"}
+      </p>
 
       <div className="filters">
         <input
@@ -65,10 +76,14 @@ function RecipeList() {
       {error && <div className="alert">{error}</div>}
 
       {loading ? (
-        <div className="page-loading">Loading recipes…</div>
+        <div className="page-loading">Loading {nounPlural}…</div>
       ) : recipes.length === 0 ? (
         <div className="empty-state">
-          No recipes yet. <Link href="/recipes/new">Create the first one</Link>.
+          No {nounPlural} yet.{" "}
+          <Link href={`/recipes/new?entry_type=${section}`}>
+            Create the first {noun.toLowerCase()}
+          </Link>
+          .
         </div>
       ) : (
         <ul className="recipe-list">
