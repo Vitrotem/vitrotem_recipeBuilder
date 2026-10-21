@@ -273,7 +273,7 @@ textarea {
 .section-nav-list {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
+  gap: 0.05rem;
 }
 
 .section-nav-item {
