@@ -10,12 +10,11 @@ import {
   type ReactNode,
 } from "react";
 import { getEntrySection, setEntrySection as persistSection } from "@/lib/section";
-import type { BrowseSection, EntryType } from "@/lib/types";
+import { browseSectionEntryType, type BrowseSection, type EntryType } from "@/lib/types";
 
 type EntrySectionContextValue = {
   section: BrowseSection;
   setSection: (section: BrowseSection) => void;
-  /** Entry type for "New …" when browsing personal/org (defaults to recipe). */
   newEntryType: EntryType;
 };
 
@@ -33,8 +32,7 @@ export function EntrySectionProvider({ children }: { children: ReactNode }) {
     persistSection(next);
   }, []);
 
-  const newEntryType: EntryType =
-    section === "log" ? "log" : section === "recipe" ? "recipe" : "recipe";
+  const newEntryType = browseSectionEntryType(section);
 
   const value = useMemo(
     () => ({ section, setSection, newEntryType }),

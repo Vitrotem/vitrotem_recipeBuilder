@@ -5,18 +5,20 @@ import { useRouter } from "next/navigation";
 import { useEntrySection } from "@/components/EntrySectionContext";
 import { useUser } from "@/components/UserContext";
 import { clearToken } from "@/lib/auth";
+import { browseSectionScope } from "@/lib/types";
 
 export default function AppHeader() {
   const router = useRouter();
   const { section, newEntryType } = useEntrySection();
   const { user } = useUser();
   const newLabel = newEntryType === "log" ? "New log" : "New recipe";
+  const scope = browseSectionScope(section);
 
   function newHref(): string {
     const params = new URLSearchParams({ entry_type: newEntryType });
-    if (section === "personal") {
+    if (scope === "personal") {
       params.set("visibility", "private");
-    } else if (section === "organization" && user?.organizations[0]) {
+    } else if (scope === "organization" && user?.organizations[0]) {
       params.set("visibility", "organization");
       params.set("organization_id", user.organizations[0].id);
     }

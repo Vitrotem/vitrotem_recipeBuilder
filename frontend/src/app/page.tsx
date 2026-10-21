@@ -7,23 +7,12 @@ import AppShell from "@/components/AppShell";
 import { useEntrySection } from "@/components/EntrySectionContext";
 import { listRecipes } from "@/lib/api";
 import {
+  browseSectionEntryType,
   browseSectionLabel,
+  browseSectionScope,
   entryTypeLabel,
-  type BrowseSection,
-  type EntryType,
   type Recipe,
 } from "@/lib/types";
-
-function scopeForSection(section: BrowseSection): "personal" | "organization" | "global" {
-  if (section === "personal") return "personal";
-  if (section === "organization") return "organization";
-  return "global";
-}
-
-function entryTypeForSection(section: BrowseSection): EntryType | undefined {
-  if (section === "recipe" || section === "log") return section;
-  return undefined;
-}
 
 export default function HomePage() {
   return (
@@ -43,11 +32,10 @@ function RecipeList() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const isPrivateScope = section === "personal" || section === "organization";
+  const scope = browseSectionScope(section);
+  const entryType = browseSectionEntryType(section);
   const title = browseSectionLabel(section);
-  const nounPlural = isPrivateScope
-    ? "entries"
-    : entryTypeLabel(section as EntryType, true).toLowerCase();
+  const nounPlural = entryTypeLabel(entryType, true).toLowerCase();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -56,8 +44,8 @@ function RecipeList() {
       const data = await listRecipes({
         q: q || undefined,
         modality: modality || undefined,
-        entry_type: entryTypeForSection(section),
-        scope: scopeForSection(section),
+        entry_type: entryType,
+        scope,
       });
       setRecipes(data);
     } catch (err) {
@@ -65,7 +53,7 @@ function RecipeList() {
     } finally {
       setLoading(false);
     }
-  }, [q, modality, section, nounPlural]);
+  }, [q, modality, entryType, scope, nounPlural]);
 
   useEffect(() => {
     const t = setTimeout(load, 200);
@@ -73,13 +61,20 @@ function RecipeList() {
   }, [load]);
 
   const subtitle =
-    section === "personal"
-      ? "Entries only you can see"
-      : section === "organization"
-        ? "Shared with your organization members"
-        : section === "log"
+    scope === "personal"
+      ? `Private ${nounPlural} only you can see`
+      : scope === "organization"
+        ? `Organization ${nounPlural} shared with your members`
+        : entryType === "log"
           ? "Public experimental notes and runs — upgrade any log to a recipe when it is ready"
           : "Public graphene liquid cell protocols for cryo-EM and room-temperature EM";
+
+  const newHref = (() => {
+    const params = new URLSearchParams({ entry_type: entryType });
+    if (scope === "personal") params.set("visibility", "private");
+    if (scope === "organization") params.set("visibility", "organization");
+    return `/recipes/new?${params.toString()}`;
+  })();
 
   return (
     <main className="page">
@@ -105,19 +100,7 @@ function RecipeList() {
         <div className="page-loading">Loading {nounPlural}…</div>
       ) : recipes.length === 0 ? (
         <div className="empty-state">
-          No {nounPlural} yet.{" "}
-          <Link
-            href={`/recipes/new?entry_type=${section === "log" ? "log" : "recipe"}${
-              section === "personal"
-                ? "&visibility=private"
-                : section === "organization"
-                  ? "&visibility=organization"
-                  : ""
-            }`}
-          >
-            Create one
-          </Link>
-          .
+          No {nounPlural} yet. <Link href={newHref}>Create one</Link>.
         </div>
       ) : (
         <ul className="recipe-list">
@@ -129,11 +112,6 @@ function RecipeList() {
                   <span className={`badge ${r.modality === "rt" ? "badge-rt" : ""}`}>
                     {r.modality === "cryo" ? "Cryo" : "RT"}
                   </span>
-                  {isPrivateScope && (
-                    <span className="badge badge-muted">
-                      {r.entry_type === "log" ? "Log" : "Recipe"}
-                    </span>
-                  )}
                   {r.author && <span>{r.author}</span>}
                   {r.sample?.subtype && <span>{r.sample.subtype}</span>}
                   {r.outcome?.status && <span>Outcome: {r.outcome.status}</span>}
