@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import PageLoading from "@/components/PageLoading";
 import { isLoggedIn } from "@/lib/auth";
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -18,9 +19,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="page-loading" style={{ minHeight: "100vh", justifyContent: "center" }}>
-        Loading…
-      </div>
+      <PageLoading style={{ minHeight: "100vh", justifyContent: "center" }} />
     );
   }
 

@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
 import AppShell from "@/components/AppShell";
 import { useEntrySection } from "@/components/EntrySectionContext";
+import PageLoading from "@/components/PageLoading";
 import RecipeForm from "@/components/RecipeForm";
 import RecipeImages from "@/components/RecipeImages";
 import RecipeMenu from "@/components/RecipeMenu";
@@ -25,7 +26,7 @@ export default function RecipeDetailPage() {
   return (
     <AuthGuard>
       <AppShell>
-        <Suspense fallback={<div className="page-loading">Loading…</div>}>
+        <Suspense fallback={<PageLoading />}>
           <RecipeDetailInner />
         </Suspense>
       </AppShell>
@@ -76,8 +77,7 @@ function RecipeDetailInner() {
       entry_type: recipe?.entry_type ?? data.entry_type ?? "recipe",
     });
     setRecipe(updated);
-    setMode("view");
-    setToast(`${entryTypeLabel(updated.entry_type)} saved`);
+    // Stay in edit so the save confirmation next to the button is visible
     router.replace(`/recipes/${id}`);
   }
 
@@ -118,7 +118,7 @@ function RecipeDetailInner() {
   if (!recipe) {
     return (
       <main className="page">
-        <div className="page-loading">Loading…</div>
+        <PageLoading />
       </main>
     );
   }
@@ -146,8 +146,6 @@ function RecipeDetailInner() {
 
   return (
     <main className="page">
-      {toast && <div className="toast success">{toast}</div>}
-
       <div className="recipe-page-header">
         <div>
           <h1 className="page-title">{recipe.name}</h1>
@@ -158,6 +156,7 @@ function RecipeDetailInner() {
           </p>
         </div>
         <div className="recipe-page-actions">
+          {toast && <span className="toast success toast-inline">{toast}</span>}
           {mode === "edit" && (
             <button type="button" className="btn btn-ghost" onClick={() => setMode("view")}>
               Cancel
@@ -176,7 +175,7 @@ function RecipeDetailInner() {
         <RecipeView recipe={recipe} />
       ) : (
         <RecipeForm
-          key={`${recipe.id}-${recipe.updated_at}-edit`}
+          key={`${recipe.id}-edit`}
           initial={initial}
           submitLabel="Save changes"
           onSubmit={handleSubmit}

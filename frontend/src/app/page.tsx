@@ -5,6 +5,7 @@ import Link from "next/link";
 import AuthGuard from "@/components/AuthGuard";
 import AppShell from "@/components/AppShell";
 import { useEntrySection } from "@/components/EntrySectionContext";
+import PageLoading from "@/components/PageLoading";
 import { useUser } from "@/components/UserContext";
 import { listRecipes } from "@/lib/api";
 import {
@@ -107,7 +108,7 @@ function RecipeList() {
       {error && <div className="alert">{error}</div>}
 
       {loading ? (
-        <div className="page-loading">Loading {nounPlural}…</div>
+        <PageLoading message={`Loading ${nounPlural}…`} />
       ) : recipes.length === 0 ? (
         <div className="empty-state">
           No {nounPlural} yet. <Link href={newHref}>Create one</Link>.

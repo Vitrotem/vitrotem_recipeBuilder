@@ -111,6 +111,8 @@ export interface OutcomeSettings {
   status?: OutcomeStatus | null;
   failure_mode?: string | null;
   note?: string | null;
+  glcs_visible?: boolean | null;
+  sample_visible?: boolean | null;
 }
 
 export interface RecipeImage {

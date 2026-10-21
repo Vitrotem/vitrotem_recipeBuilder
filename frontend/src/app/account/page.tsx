@@ -3,10 +3,16 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import AppShell from "@/components/AppShell";
+import PageLoading, { useLoadingMessage } from "@/components/PageLoading";
 import { useUser } from "@/components/UserContext";
 import { createInvite, createOrganization, listOrganizationMembers } from "@/lib/api";
 
 type Member = { id: string; username: string };
+
+function MembersLoadingHint() {
+  const text = useLoadingMessage("Loading members…");
+  return <p className="empty-hint">{text}</p>;
+}
 
 export default function AccountPage() {
   return (
@@ -106,7 +112,7 @@ function AccountInner() {
       <p className="page-sub">Manage your profile and organizations</p>
 
       {loading ? (
-        <div className="page-loading">Loading…</div>
+        <PageLoading />
       ) : (
         <>
           <section className="form-section">
@@ -155,7 +161,7 @@ function AccountInner() {
                       <div className="org-members">
                         <p className="org-members-label">Members</p>
                         {membersLoading && !membersByOrg[org.id] ? (
-                          <p className="empty-hint">Loading members…</p>
+                          <MembersLoadingHint />
                         ) : members.length === 0 ? (
                           <p className="empty-hint">No members found.</p>
                         ) : (

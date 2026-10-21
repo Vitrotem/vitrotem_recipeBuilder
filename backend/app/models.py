@@ -89,6 +89,8 @@ class OutcomeSettings(BaseModel):
     status: Optional[OutcomeStatus] = None
     failure_mode: Optional[str] = None
     note: Optional[str] = None
+    glcs_visible: Optional[bool] = None
+    sample_visible: Optional[bool] = None
 
 
 class RecipeImage(BaseModel):
