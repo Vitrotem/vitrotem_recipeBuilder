@@ -8,7 +8,7 @@ import {
   type InputHTMLAttributes,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { login, register } from "@/lib/api";
+import { login, register, wakeBackend } from "@/lib/api";
 import { isLoggedIn, setToken } from "@/lib/auth";
 
 export default function LoginPage() {
@@ -29,6 +29,10 @@ function LoginInner() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    wakeBackend();
+  }, []);
 
   useEffect(() => {
     if (isLoggedIn()) router.replace(next);
