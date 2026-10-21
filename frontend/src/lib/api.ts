@@ -94,6 +94,7 @@ export async function listRecipes(params?: {
   tag?: string;
   entry_type?: EntryType;
   scope?: "personal" | "organization" | "global";
+  organization_id?: string;
 }): Promise<Recipe[]> {
   const sp = new URLSearchParams();
   if (params?.q) sp.set("q", params.q);
@@ -101,6 +102,7 @@ export async function listRecipes(params?: {
   if (params?.tag) sp.set("tag", params.tag);
   if (params?.entry_type) sp.set("entry_type", params.entry_type);
   if (params?.scope) sp.set("scope", params.scope);
+  if (params?.organization_id) sp.set("organization_id", params.organization_id);
   const qs = sp.toString();
   return request(`/recipes${qs ? `?${qs}` : ""}`);
 }
