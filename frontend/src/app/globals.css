@@ -806,6 +806,12 @@ label textarea:focus {
   padding: 0.75rem 1rem;
 }
 
+.login-password-hint {
+  margin: -0.35rem 0 0.85rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
 .login-tabs {
   display: flex;
   gap: 0.35rem;
