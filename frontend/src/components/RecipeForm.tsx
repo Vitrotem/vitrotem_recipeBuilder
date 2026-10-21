@@ -168,7 +168,7 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete, c
             >
               <option value="private">Private</option>
               {orgs.length > 0 && <option value="organization">Organization</option>}
-              <option value="global">Globally public</option>
+              <option value="global">Anyone</option>
             </select>
           </label>
           {form.visibility === "organization" && orgs.length > 0 && (
