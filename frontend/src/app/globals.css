@@ -248,8 +248,10 @@ textarea {
   max-width: 11rem;
 }
 
-.section-nav-label-spaced {
-  margin-top: 1.35rem;
+.section-nav-group + .section-nav-group {
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
 }
 
 .section-nav-list {

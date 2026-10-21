@@ -59,41 +59,27 @@ function SectionNav() {
 
   return (
     <aside className="section-nav" aria-label="Entry sections">
-      <p className="section-nav-label">Browse</p>
-      <nav className="section-nav-list">
-        <NavItem
-          id="recipe"
-          label="Recipes"
-          active={section === "recipe"}
-          onSelect={() => select("recipe")}
-        />
-        <NavItem
-          id="log"
-          label="Logs"
-          active={section === "log"}
-          onSelect={() => select("log")}
-        />
-      </nav>
-
-      <p className="section-nav-label section-nav-label-spaced">Private</p>
-      <nav className="section-nav-list">
-        <NavItem
-          id="personal-recipe"
-          label="Recipes"
-          active={section === "personal-recipe"}
-          onSelect={() => select("personal-recipe")}
-        />
-        <NavItem
-          id="personal-log"
-          label="Logs"
-          active={section === "personal-log"}
-          onSelect={() => select("personal-log")}
-        />
-      </nav>
+      <div className="section-nav-group">
+        <p className="section-nav-label">Public</p>
+        <nav className="section-nav-list">
+          <NavItem
+            id="recipe"
+            label="Recipes"
+            active={section === "recipe"}
+            onSelect={() => select("recipe")}
+          />
+          <NavItem
+            id="log"
+            label="Logs"
+            active={section === "log"}
+            onSelect={() => select("log")}
+          />
+        </nav>
+      </div>
 
       {orgs.map((org) => (
-        <div key={org.id}>
-          <p className="section-nav-label section-nav-label-spaced" title={org.name}>
+        <div key={org.id} className="section-nav-group">
+          <p className="section-nav-label" title={org.name}>
             {org.name}
           </p>
           <nav className="section-nav-list">
@@ -112,6 +98,24 @@ function SectionNav() {
           </nav>
         </div>
       ))}
+
+      <div className="section-nav-group">
+        <p className="section-nav-label">Private</p>
+        <nav className="section-nav-list">
+          <NavItem
+            id="personal-recipe"
+            label="Recipes"
+            active={section === "personal-recipe"}
+            onSelect={() => select("personal-recipe")}
+          />
+          <NavItem
+            id="personal-log"
+            label="Logs"
+            active={section === "personal-log"}
+            onSelect={() => select("personal-log")}
+          />
+        </nav>
+      </div>
     </aside>
   );
 }
