@@ -131,13 +131,22 @@ def _require_mutate(doc: dict[str, Any] | None, user: dict[str, Any]) -> dict[st
     return doc
 
 
-def _acl_filter(user: dict[str, Any], scope: str | None) -> dict[str, Any]:
+def _acl_filter(
+    user: dict[str, Any],
+    scope: str | None,
+    organization_id: str | None = None,
+) -> dict[str, Any]:
     my_orgs = user.get("organization_ids") or []
     my_id = ObjectId(user["id"])
 
     if scope == "personal":
         return {"visibility": "private", "owner_id": my_id}
     if scope == "organization":
+        if organization_id:
+            oid = _parse_oid(organization_id, "Organization")
+            if oid not in my_orgs:
+                return {"_id": {"$exists": False}}
+            return {"visibility": "organization", "organization_id": oid}
         if not my_orgs:
             return {"_id": {"$exists": False}}  # match nothing
         return {"visibility": "organization", "organization_id": {"$in": my_orgs}}
@@ -200,10 +209,11 @@ async def list_recipes(
     tag: str | None = Query(None),
     entry_type: str | None = Query(None),
     scope: str | None = Query(None, pattern="^(personal|organization|global)$"),
+    organization_id: str | None = Query(None),
     user: dict = Depends(get_current_user),
 ) -> list[RecipeOut]:
     db = get_db()
-    filters: dict[str, Any] = dict(_acl_filter(user, scope))
+    filters: dict[str, Any] = dict(_acl_filter(user, scope, organization_id))
 
     and_clauses: list[dict[str, Any]] = []
     if modality:
