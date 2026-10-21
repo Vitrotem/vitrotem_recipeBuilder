@@ -151,6 +151,28 @@ export default function RecipeView({ recipe }: { recipe: Recipe }) {
         fields={[
           <Field key="s" label="Status" value={outcome?.status} />,
           <Field key="f" label="Failure mode" value={outcome?.failure_mode} />,
+          <Field
+            key="glcs"
+            label="GLCs visible?"
+            value={
+              outcome?.glcs_visible === true
+                ? "Yes"
+                : outcome?.glcs_visible === false
+                  ? "No"
+                  : null
+            }
+          />,
+          <Field
+            key="sv"
+            label="Sample visible"
+            value={
+              outcome?.sample_visible === true
+                ? "Yes"
+                : outcome?.sample_visible === false
+                  ? "No"
+                  : null
+            }
+          />,
           <Field key="n" label="Note" value={outcome?.note} />,
         ]}
       />

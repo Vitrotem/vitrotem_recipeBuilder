@@ -48,6 +48,7 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete, c
   const [tagsText, setTagsText] = useState((initial.tags || []).join(", "));
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [savedFlash, setSavedFlash] = useState<string | null>(null);
 
   function setVisibility(visibility: Visibility) {
     setForm((prev) => {
@@ -80,6 +81,7 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete, c
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setSavedFlash(null);
     setSaving(true);
     try {
       const tags = tagsText
@@ -87,11 +89,25 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete, c
         .map((t) => t.trim())
         .filter(Boolean);
       await onSubmit({ ...form, tags });
+      setSavedFlash("Saved");
+      window.setTimeout(() => setSavedFlash(null), 2800);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed");
     } finally {
       setSaving(false);
     }
+  }
+
+  function boolSelectValue(value: boolean | null | undefined): string {
+    if (value === true) return "yes";
+    if (value === false) return "no";
+    return "";
+  }
+
+  function parseBoolSelect(value: string): boolean | null {
+    if (value === "yes") return true;
+    if (value === "no") return false;
+    return null;
   }
 
   async function handleDelete() {
@@ -487,6 +503,32 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete, c
             options={FAILURE_MODES}
             onChange={(v) => patchSection("outcome", "failure_mode", v)}
           />
+          <label>
+            GLCs visible?
+            <select
+              value={boolSelectValue(form.outcome.glcs_visible)}
+              onChange={(e) =>
+                patchSection("outcome", "glcs_visible", parseBoolSelect(e.target.value))
+              }
+            >
+              <option value="">—</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </label>
+          <label>
+            Sample visible
+            <select
+              value={boolSelectValue(form.outcome.sample_visible)}
+              onChange={(e) =>
+                patchSection("outcome", "sample_visible", parseBoolSelect(e.target.value))
+              }
+            >
+              <option value="">—</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </label>
         </div>
         <label>
           Outcome note
@@ -504,6 +546,7 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete, c
         <button type="submit" className="btn btn-primary" disabled={saving}>
           {saving ? "Saving…" : submitLabel}
         </button>
+        {savedFlash && <span className="form-save-flash">{savedFlash}</span>}
         {onDelete && (
           <button type="button" className="btn btn-danger" disabled={saving} onClick={handleDelete}>
             Delete

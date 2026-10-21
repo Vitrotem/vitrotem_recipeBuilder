@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
 import AppShell from "@/components/AppShell";
 import { useEntrySection } from "@/components/EntrySectionContext";
+import PageLoading from "@/components/PageLoading";
 import { useUser } from "@/components/UserContext";
 import RecipeForm from "@/components/RecipeForm";
 import RecipeImages from "@/components/RecipeImages";
@@ -23,7 +24,7 @@ export default function NewRecipePage() {
   return (
     <AuthGuard>
       <AppShell>
-        <Suspense fallback={<div className="page-loading">Loading…</div>}>
+        <Suspense fallback={<PageLoading />}>
           <NewRecipeInner />
         </Suspense>
       </AppShell>
@@ -100,7 +101,7 @@ function NewRecipeInner() {
   }
 
   if (userLoading) {
-    return <div className="page-loading">Loading…</div>;
+    return <PageLoading />;
   }
 
   return (

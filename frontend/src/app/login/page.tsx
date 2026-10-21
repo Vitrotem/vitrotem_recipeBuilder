@@ -8,12 +8,21 @@ import {
   type InputHTMLAttributes,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import PageLoading, { useLoadingMessage } from "@/components/PageLoading";
 import { login, register, wakeBackend } from "@/lib/api";
 import { isLoggedIn, setToken } from "@/lib/auth";
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="login-page"><div className="login-card">Loading…</div></div>}>
+    <Suspense
+      fallback={
+        <div className="login-page">
+          <div className="login-card">
+            <PageLoading />
+          </div>
+        </div>
+      }
+    >
       <LoginInner />
     </Suspense>
   );
@@ -29,6 +38,8 @@ function LoginInner() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const busyLabel = mode === "login" ? "Signing in…" : "Creating…";
+  const submitLabel = useLoadingMessage(busyLabel, loading);
 
   useEffect(() => {
     wakeBackend();
@@ -170,13 +181,7 @@ function LoginInner() {
           </p>
         )}
         <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading
-            ? mode === "login"
-              ? "Signing in…"
-              : "Creating…"
-            : mode === "login"
-              ? "Sign in"
-              : "Create account"}
+          {loading ? submitLabel : mode === "login" ? "Sign in" : "Create account"}
         </button>
       </form>
     </div>
