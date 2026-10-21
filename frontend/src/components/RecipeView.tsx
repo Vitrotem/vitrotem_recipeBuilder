@@ -47,7 +47,7 @@ export default function RecipeView({ recipe }: { recipe: Recipe }) {
                 ? "Private"
                 : recipe.visibility === "organization"
                   ? "Organization"
-                  : "Globally public"
+                  : "Anyone"
             }
           />,
           <Field key="tags" label="Tags" value={recipe.tags?.length ? recipe.tags.join(", ") : null} />,
