@@ -103,17 +103,9 @@ def _user_can_access(doc: dict[str, Any], user: dict[str, Any]) -> bool:
 
 
 def _user_can_mutate(doc: dict[str, Any], user: dict[str, Any]) -> bool:
-    """Owner can always edit; org members can edit org-visible entries; anyone can edit global (lab shared)."""
-    visibility = doc.get("visibility") or "global"
+    """Only the original creator (owner) can edit or delete."""
     owner_id = doc.get("owner_id")
-    if owner_id is not None and str(owner_id) == user["id"]:
-        return True
-    if visibility == "global":
-        return True
-    if visibility == "organization":
-        org_id = doc.get("organization_id")
-        return org_id is not None and org_id in (user.get("organization_ids") or [])
-    return False
+    return owner_id is not None and str(owner_id) == user["id"]
 
 
 def _require_access(doc: dict[str, Any] | None, user: dict[str, Any]) -> dict[str, Any]:
