@@ -39,6 +39,17 @@ export default function RecipeView({ recipe }: { recipe: Recipe }) {
             value={recipe.modality === "cryo" ? "Cryo-EM" : "Room Temperature TEM"}
           />,
           <Field key="author" label="Author" value={recipe.author} />,
+          <Field
+            key="vis"
+            label="Visibility"
+            value={
+              recipe.visibility === "private"
+                ? "Private"
+                : recipe.visibility === "organization"
+                  ? "Organization"
+                  : "Globally public"
+            }
+          />,
           <Field key="tags" label="Tags" value={recipe.tags?.length ? recipe.tags.join(", ") : null} />,
           <Field
             key="upd"

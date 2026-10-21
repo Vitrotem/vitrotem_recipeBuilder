@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import type { RecipeInput } from "@/lib/types";
+import { useUser } from "@/components/UserContext";
+import type { RecipeInput, Visibility } from "@/lib/types";
 import SelectOrOther from "./SelectOrOther";
 import SelectOrOtherNumber from "./SelectOrOtherNumber";
 import {
@@ -41,10 +42,27 @@ type Props = {
 };
 
 export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete, children }: Props) {
+  const { user } = useUser();
+  const orgs = user?.organizations ?? [];
   const [form, setForm] = useState<RecipeInput>(initial);
   const [tagsText, setTagsText] = useState((initial.tags || []).join(", "));
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  function setVisibility(visibility: Visibility) {
+    setForm((prev) => {
+      const next: RecipeInput = { ...prev, visibility };
+      if (visibility === "organization") {
+        next.organization_id =
+          prev.organization_id && orgs.some((o) => o.id === prev.organization_id)
+            ? prev.organization_id
+            : orgs[0]?.id ?? null;
+      } else {
+        next.organization_id = null;
+      }
+      return next;
+    });
+  }
 
   function patch<K extends keyof RecipeInput>(key: K, value: RecipeInput[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -126,6 +144,33 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete, c
               placeholder="protein, NAIAD, graphene"
             />
           </label>
+          <label>
+            Visibility
+            <select
+              value={form.visibility}
+              onChange={(e) => setVisibility(e.target.value as Visibility)}
+            >
+              <option value="private">Private</option>
+              {orgs.length > 0 && <option value="organization">Organization</option>}
+              <option value="global">Globally public</option>
+            </select>
+          </label>
+          {form.visibility === "organization" && orgs.length > 0 && (
+            <label>
+              Organization
+              <select
+                value={form.organization_id || orgs[0]?.id || ""}
+                onChange={(e) => patch("organization_id", e.target.value)}
+                required
+              >
+                {orgs.map((org) => (
+                  <option key={org.id} value={org.id}>
+                    {org.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
         </div>
         <label>
           Notes

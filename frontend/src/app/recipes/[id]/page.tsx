@@ -47,7 +47,13 @@ function RecipeDetailInner() {
 
   useEffect(() => {
     if (!recipe) return;
-    setSection(recipe.entry_type ?? "recipe");
+    if (recipe.visibility === "private") {
+      setSection("personal");
+    } else if (recipe.visibility === "organization") {
+      setSection("organization");
+    } else {
+      setSection(recipe.entry_type ?? "recipe");
+    }
   }, [recipe, setSection]);
 
   useEffect(() => {
@@ -81,7 +87,9 @@ function RecipeDetailInner() {
     if (!confirm(label)) return;
     const updated = await setEntryType(id, next);
     setRecipe(updated);
-    setSection(next);
+    if (updated.visibility === "private") setSection("personal");
+    else if (updated.visibility === "organization") setSection("organization");
+    else setSection(next);
     setToast(
       next === "recipe" ? "Upgraded to recipe" : "Downgraded to log",
     );
@@ -129,6 +137,8 @@ function RecipeDetailInner() {
     graphene: recipe.graphene || {},
     microscope: recipe.microscope || {},
     outcome: recipe.outcome || {},
+    visibility: recipe.visibility ?? "global",
+    organization_id: recipe.organization_id ?? null,
   };
 
   return (

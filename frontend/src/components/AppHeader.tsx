@@ -3,12 +3,25 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEntrySection } from "@/components/EntrySectionContext";
+import { useUser } from "@/components/UserContext";
 import { clearToken } from "@/lib/auth";
 
 export default function AppHeader() {
   const router = useRouter();
-  const { section } = useEntrySection();
-  const newLabel = section === "log" ? "New log" : "New recipe";
+  const { section, newEntryType } = useEntrySection();
+  const { user } = useUser();
+  const newLabel = newEntryType === "log" ? "New log" : "New recipe";
+
+  function newHref(): string {
+    const params = new URLSearchParams({ entry_type: newEntryType });
+    if (section === "personal") {
+      params.set("visibility", "private");
+    } else if (section === "organization" && user?.organizations[0]) {
+      params.set("visibility", "organization");
+      params.set("organization_id", user.organizations[0].id);
+    }
+    return `/recipes/new?${params.toString()}`;
+  }
 
   function logout() {
     clearToken();
@@ -30,7 +43,10 @@ export default function AppHeader() {
           </span>
         </Link>
         <nav className="header-actions">
-          <Link href={`/recipes/new?entry_type=${section}`} className="btn btn-primary">
+          <Link href="/account" className="btn btn-ghost">
+            {user?.username ?? "Account"}
+          </Link>
+          <Link href={newHref()} className="btn btn-primary">
             {newLabel}
           </Link>
           <button type="button" className="btn btn-ghost" onClick={logout}>

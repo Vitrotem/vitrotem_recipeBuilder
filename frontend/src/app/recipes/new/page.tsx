@@ -1,15 +1,23 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
 import AppShell from "@/components/AppShell";
 import { useEntrySection } from "@/components/EntrySectionContext";
+import { useUser } from "@/components/UserContext";
 import RecipeForm from "@/components/RecipeForm";
 import RecipeImages from "@/components/RecipeImages";
 import { createRecipe, uploadRecipeImage } from "@/lib/api";
 import { revokePendingImages, type PendingImage } from "@/lib/imageUpload";
-import { emptyRecipe, entryTypeLabel, type EntryType, type RecipeInput } from "@/lib/types";
+import {
+  emptyRecipe,
+  entryTypeLabel,
+  type BrowseSection,
+  type EntryType,
+  type RecipeInput,
+  type Visibility,
+} from "@/lib/types";
 
 export default function NewRecipePage() {
   return (
@@ -27,17 +35,53 @@ function NewRecipeInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { section, setSection } = useEntrySection();
+  const { user, loading: userLoading } = useUser();
   const paramType = searchParams.get("entry_type");
   const entryType: EntryType =
-    paramType === "log" || paramType === "recipe" ? paramType : section;
+    paramType === "log" || paramType === "recipe" ? paramType : "recipe";
   const noun = entryTypeLabel(entryType).toLowerCase();
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const pendingRef = useRef(pendingImages);
   pendingRef.current = pendingImages;
 
+  const initial = useMemo(() => {
+    const orgs = user?.organizations ?? [];
+    const paramVis = searchParams.get("visibility") as Visibility | null;
+    const paramOrg = searchParams.get("organization_id");
+
+    let visibility: Visibility;
+    let organization_id: string | null = null;
+
+    if (paramVis === "private" || paramVis === "organization" || paramVis === "global") {
+      visibility = paramVis;
+    } else if (orgs.length > 0) {
+      visibility = "organization";
+    } else {
+      visibility = "private";
+    }
+
+    if (visibility === "organization") {
+      organization_id =
+        (paramOrg && orgs.some((o) => o.id === paramOrg) ? paramOrg : null) ||
+        orgs[0]?.id ||
+        null;
+      if (!organization_id) {
+        visibility = "private";
+      }
+    }
+
+    return emptyRecipe(entryType, { visibility, organization_id });
+  }, [entryType, searchParams, user]);
+
   useEffect(() => {
-    if (entryType !== section) setSection(entryType);
-  }, [entryType, section, setSection]);
+    const browse: BrowseSection =
+      initial.visibility === "private"
+        ? "personal"
+        : initial.visibility === "organization"
+          ? "organization"
+          : entryType;
+    if (browse !== section) setSection(browse);
+  }, [entryType, initial.visibility, section, setSection]);
 
   useEffect(() => {
     return () => revokePendingImages(pendingRef.current);
@@ -60,6 +104,10 @@ function NewRecipeInner() {
     router.push(`/recipes/${created.id}?saved=1`);
   }
 
+  if (userLoading) {
+    return <div className="page-loading">Loading…</div>;
+  }
+
   return (
     <main className="page">
       <h1 className="page-title">New {noun}</h1>
@@ -67,8 +115,8 @@ function NewRecipeInner() {
         Capture plasma, NAIAD, sample, grid, graphene, and microscope settings
       </p>
       <RecipeForm
-        key={entryType}
-        initial={emptyRecipe(entryType)}
+        key={`${entryType}-${initial.visibility}-${initial.organization_id ?? ""}`}
+        initial={initial}
         submitLabel={`Create ${noun}`}
         onSubmit={handleSubmit}
       >
