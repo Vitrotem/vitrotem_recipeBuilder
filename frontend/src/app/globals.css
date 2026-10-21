@@ -1,3 +1,19 @@
+@font-face {
+  font-family: "Segoe UI Local";
+  src: url("/fonts/SegoeUI.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Segoe UI Local";
+  src: url("/fonts/SegoeUI-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* vitroTEM brand blues from website hero */
   --navy: #0a2540;
@@ -26,8 +42,8 @@
   --warning: #c9a227;
   --radius: 8px;
   --radius-lg: 14px;
-  --font-sans: var(--font-dm-sans), "Segoe UI", sans-serif;
-  --font-display: var(--font-syne), var(--font-dm-sans), sans-serif;
+  --font-sans: "Segoe UI Local", "Segoe UI", sans-serif;
+  --font-display: "Segoe UI Local", "Segoe UI", sans-serif;
   --shadow: 0 8px 30px rgba(10, 37, 64, 0.08);
   --shadow-lg: 0 20px 50px rgba(10, 37, 64, 0.14);
   --shadow-blue: 0 12px 36px rgba(30, 111, 217, 0.22);
@@ -1509,7 +1525,7 @@ label .other-input {
 }
 
 .recipe-view {
-  font-family: Calibri, Candara, Segoe, "Segoe UI", Optima, Arial, sans-serif;
+  font-family: var(--font-sans);
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -1520,7 +1536,7 @@ label .other-input {
 }
 
 .recipe-view .view-section h2 {
-  font-family: Calibri, Candara, Segoe, "Segoe UI", Optima, Arial, sans-serif;
+  font-family: var(--font-sans);
   margin: 0 0 0.75rem;
   font-size: 1.05rem;
   font-weight: 700;
