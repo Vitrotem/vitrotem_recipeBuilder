@@ -41,12 +41,17 @@ export function browseSectionFromVisibility(
   return entryType;
 }
 
-export function browseSectionLabel(section: BrowseSection): string {
+export function browseSectionLabel(
+  section: BrowseSection,
+  orgName?: string | null,
+): string {
   const type = browseSectionEntryType(section);
   const scope = browseSectionScope(section);
   const base = entryTypeLabel(type, true);
   if (scope === "personal") return `Private ${base.toLowerCase()}`;
-  if (scope === "organization") return `Organization ${base.toLowerCase()}`;
+  if (scope === "organization") {
+    return orgName ? `${orgName} ${base.toLowerCase()}` : `Organization ${base.toLowerCase()}`;
+  }
   return base;
 }
 
