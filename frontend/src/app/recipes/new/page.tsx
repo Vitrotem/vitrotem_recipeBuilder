@@ -11,9 +11,9 @@ import RecipeImages from "@/components/RecipeImages";
 import { createRecipe, uploadRecipeImage } from "@/lib/api";
 import { revokePendingImages, type PendingImage } from "@/lib/imageUpload";
 import {
+  browseSectionFromVisibility,
   emptyRecipe,
   entryTypeLabel,
-  type BrowseSection,
   type EntryType,
   type RecipeInput,
   type Visibility,
@@ -74,12 +74,7 @@ function NewRecipeInner() {
   }, [entryType, searchParams, user]);
 
   useEffect(() => {
-    const browse: BrowseSection =
-      initial.visibility === "private"
-        ? "personal"
-        : initial.visibility === "organization"
-          ? "organization"
-          : entryType;
+    const browse = browseSectionFromVisibility(initial.visibility, entryType);
     if (browse !== section) setSection(browse);
   }, [entryType, initial.visibility, section, setSection]);
 

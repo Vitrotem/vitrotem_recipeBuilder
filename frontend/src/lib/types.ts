@@ -3,24 +3,51 @@ export type Modality = "cryo" | "rt";
 export type PlasmaTarget = "bottom" | "top" | "both";
 export type OutcomeStatus = "good" | "partial" | "failed";
 export type Visibility = "private" | "organization" | "global";
-export type BrowseSection = "recipe" | "log" | "personal" | "organization";
+export type BrowseSection =
+  | "recipe"
+  | "log"
+  | "personal-recipe"
+  | "personal-log"
+  | "organization-recipe"
+  | "organization-log";
 
 export function entryTypeLabel(type: EntryType, plural = false): string {
   if (type === "log") return plural ? "Logs" : "Log";
   return plural ? "Recipes" : "Recipe";
 }
 
-export function browseSectionLabel(section: BrowseSection): string {
-  switch (section) {
-    case "log":
-      return "Logs";
-    case "personal":
-      return "Personal";
-    case "organization":
-      return "Organization";
-    default:
-      return "Recipes";
+export function browseSectionScope(
+  section: BrowseSection,
+): "personal" | "organization" | "global" {
+  if (section.startsWith("personal-")) return "personal";
+  if (section.startsWith("organization-")) return "organization";
+  return "global";
+}
+
+export function browseSectionEntryType(section: BrowseSection): EntryType {
+  return section.endsWith("log") ? "log" : "recipe";
+}
+
+export function browseSectionFromVisibility(
+  visibility: Visibility | undefined,
+  entryType: EntryType,
+): BrowseSection {
+  if (visibility === "private") {
+    return entryType === "log" ? "personal-log" : "personal-recipe";
   }
+  if (visibility === "organization") {
+    return entryType === "log" ? "organization-log" : "organization-recipe";
+  }
+  return entryType;
+}
+
+export function browseSectionLabel(section: BrowseSection): string {
+  const type = browseSectionEntryType(section);
+  const scope = browseSectionScope(section);
+  const base = entryTypeLabel(type, true);
+  if (scope === "personal") return `Private ${base.toLowerCase()}`;
+  if (scope === "organization") return `Organization ${base.toLowerCase()}`;
+  return base;
 }
 
 export interface PlasmaSettings {

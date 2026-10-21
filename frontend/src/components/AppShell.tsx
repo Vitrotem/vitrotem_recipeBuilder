@@ -20,6 +20,30 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function NavItem({
+  id,
+  label,
+  section,
+  onSelect,
+}: {
+  id: BrowseSection;
+  label: string;
+  section: BrowseSection;
+  onSelect: (next: BrowseSection) => void;
+}) {
+  const active = section === id;
+  return (
+    <button
+      type="button"
+      className={`section-nav-item${active ? " active" : ""}`}
+      aria-current={active ? "page" : undefined}
+      onClick={() => onSelect(id)}
+    >
+      {label}
+    </button>
+  );
+}
+
 function SectionNav() {
   const { section, setSection } = useEntrySection();
   const { user } = useUser();
@@ -38,45 +62,40 @@ function SectionNav() {
     <aside className="section-nav" aria-label="Entry sections">
       <p className="section-nav-label">Browse</p>
       <nav className="section-nav-list">
-        <button
-          type="button"
-          className={`section-nav-item${section === "recipe" ? " active" : ""}`}
-          aria-current={section === "recipe" ? "page" : undefined}
-          onClick={() => select("recipe")}
-        >
-          Recipes
-        </button>
-        <button
-          type="button"
-          className={`section-nav-item${section === "log" ? " active" : ""}`}
-          aria-current={section === "log" ? "page" : undefined}
-          onClick={() => select("log")}
-        >
-          Logs
-        </button>
+        <NavItem id="recipe" label="Recipes" section={section} onSelect={select} />
+        <NavItem id="log" label="Logs" section={section} onSelect={select} />
       </nav>
 
       <p className="section-nav-label section-nav-label-spaced">Private</p>
       <nav className="section-nav-list">
-        <button
-          type="button"
-          className={`section-nav-item${section === "personal" ? " active" : ""}`}
-          aria-current={section === "personal" ? "page" : undefined}
-          onClick={() => select("personal")}
-        >
-          Personal
-        </button>
-        {hasOrgs && (
-          <button
-            type="button"
-            className={`section-nav-item${section === "organization" ? " active" : ""}`}
-            aria-current={section === "organization" ? "page" : undefined}
-            onClick={() => select("organization")}
-          >
-            Organization
-          </button>
-        )}
+        <NavItem
+          id="personal-recipe"
+          label="Recipes"
+          section={section}
+          onSelect={select}
+        />
+        <NavItem id="personal-log" label="Logs" section={section} onSelect={select} />
       </nav>
+
+      {hasOrgs && (
+        <>
+          <p className="section-nav-label section-nav-label-spaced">Organization</p>
+          <nav className="section-nav-list">
+            <NavItem
+              id="organization-recipe"
+              label="Recipes"
+              section={section}
+              onSelect={select}
+            />
+            <NavItem
+              id="organization-log"
+              label="Logs"
+              section={section}
+              onSelect={select}
+            />
+          </nav>
+        </>
+      )}
     </aside>
   );
 }

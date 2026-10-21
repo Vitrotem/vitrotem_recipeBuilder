@@ -10,7 +10,14 @@ import RecipeImages from "@/components/RecipeImages";
 import RecipeMenu from "@/components/RecipeMenu";
 import RecipeView from "@/components/RecipeView";
 import { deleteRecipe, getRecipe, setEntryType, updateRecipe } from "@/lib/api";
-import { entryTypeLabel, type EntryType, type Recipe, type RecipeImage, type RecipeInput } from "@/lib/types";
+import {
+  browseSectionFromVisibility,
+  entryTypeLabel,
+  type EntryType,
+  type Recipe,
+  type RecipeImage,
+  type RecipeInput,
+} from "@/lib/types";
 
 const EMPTY_IMAGES: RecipeImage[] = [];
 
@@ -47,13 +54,7 @@ function RecipeDetailInner() {
 
   useEffect(() => {
     if (!recipe) return;
-    if (recipe.visibility === "private") {
-      setSection("personal");
-    } else if (recipe.visibility === "organization") {
-      setSection("organization");
-    } else {
-      setSection(recipe.entry_type ?? "recipe");
-    }
+    setSection(browseSectionFromVisibility(recipe.visibility, recipe.entry_type ?? "recipe"));
   }, [recipe, setSection]);
 
   useEffect(() => {
@@ -87,9 +88,7 @@ function RecipeDetailInner() {
     if (!confirm(label)) return;
     const updated = await setEntryType(id, next);
     setRecipe(updated);
-    if (updated.visibility === "private") setSection("personal");
-    else if (updated.visibility === "organization") setSection("organization");
-    else setSection(next);
+    setSection(browseSectionFromVisibility(updated.visibility, next));
     setToast(
       next === "recipe" ? "Upgraded to recipe" : "Downgraded to log",
     );
