@@ -5,6 +5,7 @@ import Link from "next/link";
 import AuthGuard from "@/components/AuthGuard";
 import AppShell from "@/components/AppShell";
 import { useEntrySection } from "@/components/EntrySectionContext";
+import { useUser } from "@/components/UserContext";
 import { listRecipes } from "@/lib/api";
 import {
   browseSectionEntryType,
@@ -25,7 +26,8 @@ export default function HomePage() {
 }
 
 function RecipeList() {
-  const { section } = useEntrySection();
+  const { section, organizationId } = useEntrySection();
+  const { user } = useUser();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [q, setQ] = useState("");
   const [modality, setModality] = useState("");
@@ -34,7 +36,11 @@ function RecipeList() {
 
   const scope = browseSectionScope(section);
   const entryType = browseSectionEntryType(section);
-  const title = browseSectionLabel(section);
+  const orgName =
+    scope === "organization"
+      ? user?.organizations.find((o) => o.id === organizationId)?.name
+      : null;
+  const title = browseSectionLabel(section, orgName);
   const nounPlural = entryTypeLabel(entryType, true).toLowerCase();
 
   const load = useCallback(async () => {
@@ -46,6 +52,7 @@ function RecipeList() {
         modality: modality || undefined,
         entry_type: entryType,
         scope,
+        organization_id: scope === "organization" ? organizationId || undefined : undefined,
       });
       setRecipes(data);
     } catch (err) {
@@ -53,7 +60,7 @@ function RecipeList() {
     } finally {
       setLoading(false);
     }
-  }, [q, modality, entryType, scope, nounPlural]);
+  }, [q, modality, entryType, scope, organizationId, nounPlural]);
 
   useEffect(() => {
     const t = setTimeout(load, 200);
@@ -64,7 +71,7 @@ function RecipeList() {
     scope === "personal"
       ? `Private ${nounPlural} only you can see`
       : scope === "organization"
-        ? `Organization ${nounPlural} shared with your members`
+        ? `${orgName ?? "Organization"} ${nounPlural} shared with members`
         : entryType === "log"
           ? "Public experimental notes and runs — upgrade any log to a recipe when it is ready"
           : "Public graphene liquid cell protocols for cryo-EM and room-temperature EM";
@@ -72,7 +79,10 @@ function RecipeList() {
   const newHref = (() => {
     const params = new URLSearchParams({ entry_type: entryType });
     if (scope === "personal") params.set("visibility", "private");
-    if (scope === "organization") params.set("visibility", "organization");
+    if (scope === "organization") {
+      params.set("visibility", "organization");
+      if (organizationId) params.set("organization_id", organizationId);
+    }
     return `/recipes/new?${params.toString()}`;
   })();
 

@@ -14,6 +14,7 @@ from app.models import (
     InviteAcceptRequest,
     InviteCreateResponse,
     OrganizationCreate,
+    OrganizationMember,
     OrganizationOut,
 )
 
@@ -128,6 +129,36 @@ async def accept_invite(
         name=org["name"],
         created_at=org["created_at"],
     )
+
+
+@router.get("/{org_id}/members", response_model=list[OrganizationMember])
+async def list_members(
+    org_id: str,
+    user: dict = Depends(get_current_user),
+) -> list[OrganizationMember]:
+    db = get_db()
+    oid = _parse_oid(org_id, "Organization")
+    org = await db.organizations.find_one({"_id": oid})
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+
+    member_ids = {str(x) for x in (user.get("organization_ids") or [])}
+    if org_id not in member_ids:
+        raise HTTPException(status_code=403, detail="Not a member of this organization")
+
+    out: list[OrganizationMember] = []
+    cursor = db.users.find(
+        {"organization_ids": oid},
+        {"username": 1},
+    ).sort("username_normalized", 1)
+    async for member in cursor:
+        out.append(
+            OrganizationMember(
+                id=str(member["_id"]),
+                username=member["username"],
+            )
+        )
+    return out
 
 
 @router.post(

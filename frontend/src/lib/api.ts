@@ -81,6 +81,12 @@ export async function createInvite(
   return request(`/organizations/${orgId}/invites`, { method: "POST" });
 }
 
+export async function listOrganizationMembers(
+  orgId: string,
+): Promise<{ id: string; username: string }[]> {
+  return request(`/organizations/${orgId}/members`);
+}
+
 export async function acceptInvite(token: string): Promise<Organization> {
   return request("/organizations/invites/accept", {
     method: "POST",

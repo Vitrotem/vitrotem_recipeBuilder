@@ -177,6 +177,11 @@ class OrganizationOut(BaseModel):
     created_at: datetime
 
 
+class OrganizationMember(BaseModel):
+    id: str
+    username: str
+
+
 class OrganizationCreate(BaseModel):
     name: str
 

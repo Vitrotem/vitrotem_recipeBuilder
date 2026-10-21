@@ -9,7 +9,7 @@ import { browseSectionScope } from "@/lib/types";
 
 export default function AppHeader() {
   const router = useRouter();
-  const { section, newEntryType } = useEntrySection();
+  const { section, organizationId, newEntryType } = useEntrySection();
   const { user } = useUser();
   const newLabel = newEntryType === "log" ? "New log" : "New recipe";
   const scope = browseSectionScope(section);
@@ -18,9 +18,12 @@ export default function AppHeader() {
     const params = new URLSearchParams({ entry_type: newEntryType });
     if (scope === "personal") {
       params.set("visibility", "private");
-    } else if (scope === "organization" && user?.organizations[0]) {
-      params.set("visibility", "organization");
-      params.set("organization_id", user.organizations[0].id);
+    } else if (scope === "organization") {
+      const orgId = organizationId || user?.organizations[0]?.id;
+      if (orgId) {
+        params.set("visibility", "organization");
+        params.set("organization_id", orgId);
+      }
     }
     return `/recipes/new?${params.toString()}`;
   }

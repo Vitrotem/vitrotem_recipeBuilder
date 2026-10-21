@@ -54,7 +54,8 @@ function RecipeDetailInner() {
 
   useEffect(() => {
     if (!recipe) return;
-    setSection(browseSectionFromVisibility(recipe.visibility, recipe.entry_type ?? "recipe"));
+    const next = browseSectionFromVisibility(recipe.visibility, recipe.entry_type ?? "recipe");
+    setSection(next, recipe.organization_id ?? null);
   }, [recipe, setSection]);
 
   useEffect(() => {
@@ -88,7 +89,10 @@ function RecipeDetailInner() {
     if (!confirm(label)) return;
     const updated = await setEntryType(id, next);
     setRecipe(updated);
-    setSection(browseSectionFromVisibility(updated.visibility, next));
+    setSection(
+      browseSectionFromVisibility(updated.visibility, next),
+      updated.organization_id ?? null,
+    );
     setToast(
       next === "recipe" ? "Upgraded to recipe" : "Downgraded to log",
     );
