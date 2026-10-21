@@ -44,6 +44,13 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+/** Ping the API so a cold/sleeping backend (e.g. Fly) starts waking before login. */
+export function wakeBackend(): void {
+  void fetch(`${API_BASE}/health`, { method: "GET", cache: "no-store" }).catch(() => {
+    /* ignore — wake is best-effort */
+  });
+}
+
 export async function login(username: string, password: string): Promise<string> {
   const data = await request<{ access_token: string }>("/auth/login", {
     method: "POST",
