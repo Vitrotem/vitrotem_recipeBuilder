@@ -242,6 +242,10 @@ textarea {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--blue);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 11rem;
 }
 
 .section-nav-label-spaced {
@@ -869,7 +873,14 @@ label textarea:focus {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
+}
+
+.org-card {
+  background: var(--ice);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
 }
 
 .org-row {
@@ -878,14 +889,56 @@ label textarea:focus {
   justify-content: space-between;
   gap: 1rem;
   padding: 0.75rem 0.9rem;
-  background: var(--ice);
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
 }
 
 .org-name {
   font-weight: 600;
   color: var(--navy);
+}
+
+.org-members {
+  padding: 0 0.9rem 0.9rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+  margin: 0 0.15rem;
+}
+
+.org-members-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.member-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.member-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.65rem;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  color: var(--navy);
+}
+
+.member-you {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--blue);
 }
 
 .org-create-form {

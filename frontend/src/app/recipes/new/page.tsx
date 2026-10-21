@@ -75,8 +75,8 @@ function NewRecipeInner() {
 
   useEffect(() => {
     const browse = browseSectionFromVisibility(initial.visibility, entryType);
-    if (browse !== section) setSection(browse);
-  }, [entryType, initial.visibility, section, setSection]);
+    if (browse !== section) setSection(browse, initial.organization_id ?? null);
+  }, [entryType, initial.visibility, initial.organization_id, section, setSection]);
 
   useEffect(() => {
     return () => revokePendingImages(pendingRef.current);
