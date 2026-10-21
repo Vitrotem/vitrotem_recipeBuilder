@@ -281,7 +281,7 @@ textarea {
   background: transparent;
   text-align: left;
   font: inherit;
-  font-weight: 600;
+  font-weight: 600; 
   color: var(--text-muted);
   padding: 0.3rem 0.75rem;
   border-radius: var(--radius);
