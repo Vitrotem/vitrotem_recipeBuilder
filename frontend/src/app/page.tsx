@@ -6,7 +6,24 @@ import AuthGuard from "@/components/AuthGuard";
 import AppShell from "@/components/AppShell";
 import { useEntrySection } from "@/components/EntrySectionContext";
 import { listRecipes } from "@/lib/api";
-import { entryTypeLabel, type Recipe } from "@/lib/types";
+import {
+  browseSectionLabel,
+  entryTypeLabel,
+  type BrowseSection,
+  type EntryType,
+  type Recipe,
+} from "@/lib/types";
+
+function scopeForSection(section: BrowseSection): "personal" | "organization" | "global" {
+  if (section === "personal") return "personal";
+  if (section === "organization") return "organization";
+  return "global";
+}
+
+function entryTypeForSection(section: BrowseSection): EntryType | undefined {
+  if (section === "recipe" || section === "log") return section;
+  return undefined;
+}
 
 export default function HomePage() {
   return (
@@ -26,8 +43,11 @@ function RecipeList() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const noun = entryTypeLabel(section);
-  const nounPlural = entryTypeLabel(section, true).toLowerCase();
+  const isPrivateScope = section === "personal" || section === "organization";
+  const title = browseSectionLabel(section);
+  const nounPlural = isPrivateScope
+    ? "entries"
+    : entryTypeLabel(section as EntryType, true).toLowerCase();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -36,7 +56,8 @@ function RecipeList() {
       const data = await listRecipes({
         q: q || undefined,
         modality: modality || undefined,
-        entry_type: section,
+        entry_type: entryTypeForSection(section),
+        scope: scopeForSection(section),
       });
       setRecipes(data);
     } catch (err) {
@@ -51,18 +72,23 @@ function RecipeList() {
     return () => clearTimeout(t);
   }, [load]);
 
+  const subtitle =
+    section === "personal"
+      ? "Entries only you can see"
+      : section === "organization"
+        ? "Shared with your organization members"
+        : section === "log"
+          ? "Public experimental notes and runs — upgrade any log to a recipe when it is ready"
+          : "Public graphene liquid cell protocols for cryo-EM and room-temperature EM";
+
   return (
     <main className="page">
-      <h1 className="page-title">{entryTypeLabel(section, true)}</h1>
-      <p className="page-sub">
-        {section === "log"
-          ? "Experimental notes and runs — upgrade any log to a recipe when it is ready"
-          : "Graphene liquid cell protocols for cryo-EM and room-temperature EM"}
-      </p>
+      <h1 className="page-title">{title}</h1>
+      <p className="page-sub">{subtitle}</p>
 
       <div className="filters">
         <input
-          placeholder="Search name, author, sample…"
+          placeholder="Search name, author, tags…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
@@ -80,8 +106,16 @@ function RecipeList() {
       ) : recipes.length === 0 ? (
         <div className="empty-state">
           No {nounPlural} yet.{" "}
-          <Link href={`/recipes/new?entry_type=${section}`}>
-            Create the first {noun.toLowerCase()}
+          <Link
+            href={`/recipes/new?entry_type=${section === "log" ? "log" : "recipe"}${
+              section === "personal"
+                ? "&visibility=private"
+                : section === "organization"
+                  ? "&visibility=organization"
+                  : ""
+            }`}
+          >
+            Create one
           </Link>
           .
         </div>
@@ -95,6 +129,11 @@ function RecipeList() {
                   <span className={`badge ${r.modality === "rt" ? "badge-rt" : ""}`}>
                     {r.modality === "cryo" ? "Cryo" : "RT"}
                   </span>
+                  {isPrivateScope && (
+                    <span className="badge badge-muted">
+                      {r.entry_type === "log" ? "Log" : "Recipe"}
+                    </span>
+                  )}
                   {r.author && <span>{r.author}</span>}
                   {r.sample?.subtype && <span>{r.sample.subtype}</span>}
                   {r.outcome?.status && <span>Outcome: {r.outcome.status}</span>}

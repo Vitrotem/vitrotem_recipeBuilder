@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class EntryType(str, Enum):
@@ -25,6 +25,12 @@ class OutcomeStatus(str, Enum):
     good = "good"
     partial = "partial"
     failed = "failed"
+
+
+class Visibility(str, Enum):
+    private = "private"
+    organization = "organization"
+    globally_public = "global"
 
 
 class PlasmaSettings(BaseModel):
@@ -109,6 +115,8 @@ class RecipeBase(BaseModel):
     graphene: GrapheneSettings = Field(default_factory=GrapheneSettings)
     microscope: MicroscopeSettings = Field(default_factory=MicroscopeSettings)
     outcome: OutcomeSettings = Field(default_factory=OutcomeSettings)
+    visibility: Visibility = Visibility.private
+    organization_id: Optional[str] = None
 
 
 class RecipeCreate(RecipeBase):
@@ -125,6 +133,7 @@ class EntryTypeUpdate(BaseModel):
 
 class RecipeOut(RecipeBase):
     id: str
+    owner_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     images: list[RecipeImage] = Field(default_factory=list)
@@ -135,6 +144,72 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        name = v.strip()
+        if len(name) < 2 or len(name) > 64:
+            raise ValueError("Username must be 2–64 characters")
+        if not all(c.isalnum() or c in "._-" for c in name):
+            raise ValueError("Username may only contain letters, digits, ., _, -")
+        return name
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 6:
+            raise ValueError("Password must be at least 6 characters")
+        return v
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class OrganizationOut(BaseModel):
+    id: str
+    name: str
+    created_at: datetime
+
+
+class OrganizationCreate(BaseModel):
+    name: str
+
+    @field_validator("name")
+    @classmethod
+    def validate_org_name(cls, v: str) -> str:
+        name = v.strip()
+        if not name:
+            raise ValueError("Organization name is required")
+        if len(name) > 64:
+            raise ValueError("Organization name must be at most 64 characters")
+        if name.startswith("-") or name.endswith("-") or "--" in name:
+            raise ValueError("Organization name cannot start/end with or contain consecutive hyphens")
+        if not all(c.isalnum() or c == "-" for c in name):
+            raise ValueError("Organization name may only contain letters, digits, and hyphens")
+        return name
+
+
+class InviteCreateResponse(BaseModel):
+    token: str
+    expires_at: datetime
+
+
+class InviteAcceptRequest(BaseModel):
+    token: str
+
+
+class MeOrganization(BaseModel):
+    id: str
+    name: str
+
+
+class MeResponse(BaseModel):
+    id: str
+    username: str
+    organizations: list[MeOrganization] = Field(default_factory=list)

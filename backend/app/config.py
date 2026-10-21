@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     admin_username: str = "admin"
     admin_password: str = "changeme"
     cors_origins: str = "http://localhost:3000"
+    # url-safe base64 Fernet key (32 bytes). Empty → derived from jwt_secret (dev only).
+    data_encryption_key: str = ""
+    invite_expire_days: int = 7
 
     @property
     def cors_origin_list(self) -> list[str]:

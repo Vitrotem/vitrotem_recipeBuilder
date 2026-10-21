@@ -3,26 +3,31 @@
 import { usePathname, useRouter } from "next/navigation";
 import AppHeader from "@/components/AppHeader";
 import { EntrySectionProvider, useEntrySection } from "@/components/EntrySectionContext";
-import type { EntryType } from "@/lib/types";
+import { UserProvider, useUser } from "@/components/UserContext";
+import type { BrowseSection } from "@/lib/types";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <EntrySectionProvider>
-      <AppHeader />
-      <div className="app-body">
-        <SectionNav />
-        <div className="app-content">{children}</div>
-      </div>
-    </EntrySectionProvider>
+    <UserProvider>
+      <EntrySectionProvider>
+        <AppHeader />
+        <div className="app-body">
+          <SectionNav />
+          <div className="app-content">{children}</div>
+        </div>
+      </EntrySectionProvider>
+    </UserProvider>
   );
 }
 
 function SectionNav() {
   const { section, setSection } = useEntrySection();
+  const { user } = useUser();
   const router = useRouter();
   const pathname = usePathname();
+  const hasOrgs = (user?.organizations.length ?? 0) > 0;
 
-  function select(next: EntryType) {
+  function select(next: BrowseSection) {
     setSection(next);
     if (pathname !== "/") {
       router.push("/");
@@ -49,6 +54,28 @@ function SectionNav() {
         >
           Logs
         </button>
+      </nav>
+
+      <p className="section-nav-label section-nav-label-spaced">Private</p>
+      <nav className="section-nav-list">
+        <button
+          type="button"
+          className={`section-nav-item${section === "personal" ? " active" : ""}`}
+          aria-current={section === "personal" ? "page" : undefined}
+          onClick={() => select("personal")}
+        >
+          Personal
+        </button>
+        {hasOrgs && (
+          <button
+            type="button"
+            className={`section-nav-item${section === "organization" ? " active" : ""}`}
+            aria-current={section === "organization" ? "page" : undefined}
+            onClick={() => select("organization")}
+          >
+            Organization
+          </button>
+        )}
       </nav>
     </aside>
   );

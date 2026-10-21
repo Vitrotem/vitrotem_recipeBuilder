@@ -1,5 +1,5 @@
 import { getToken, clearToken } from "./auth";
-import type { EntryType, Recipe, RecipeInput } from "./types";
+import type { EntryType, MeUser, Organization, Recipe, RecipeInput, Visibility } from "./types";
 
 /** Same-origin proxy — backend URL stays in server-only `API_URL` (next.config rewrites). */
 const API_BASE = "/api";
@@ -52,17 +52,55 @@ export async function login(username: string, password: string): Promise<string>
   return data.access_token;
 }
 
+export async function register(username: string, password: string): Promise<string> {
+  const data = await request<{ access_token: string }>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ username, password }),
+  });
+  return data.access_token;
+}
+
+export async function fetchMe(): Promise<MeUser> {
+  return request("/auth/me");
+}
+
+export async function listOrganizations(): Promise<Organization[]> {
+  return request("/organizations");
+}
+
+export async function createOrganization(name: string): Promise<Organization> {
+  return request("/organizations", {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function createInvite(
+  orgId: string,
+): Promise<{ token: string; expires_at: string }> {
+  return request(`/organizations/${orgId}/invites`, { method: "POST" });
+}
+
+export async function acceptInvite(token: string): Promise<Organization> {
+  return request("/organizations/invites/accept", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  });
+}
+
 export async function listRecipes(params?: {
   q?: string;
   modality?: string;
   tag?: string;
   entry_type?: EntryType;
+  scope?: "personal" | "organization" | "global";
 }): Promise<Recipe[]> {
   const sp = new URLSearchParams();
   if (params?.q) sp.set("q", params.q);
   if (params?.modality) sp.set("modality", params.modality);
   if (params?.tag) sp.set("tag", params.tag);
   if (params?.entry_type) sp.set("entry_type", params.entry_type);
+  if (params?.scope) sp.set("scope", params.scope);
   const qs = sp.toString();
   return request(`/recipes${qs ? `?${qs}` : ""}`);
 }
@@ -117,3 +155,5 @@ export async function fetchRecipeImageBlob(recipeId: string, imageId: string): P
   if (!res.ok) throw new Error("Failed to load image");
   return res.blob();
 }
+
+export type { Visibility };

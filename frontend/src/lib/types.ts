@@ -2,10 +2,25 @@ export type EntryType = "recipe" | "log";
 export type Modality = "cryo" | "rt";
 export type PlasmaTarget = "bottom" | "top" | "both";
 export type OutcomeStatus = "good" | "partial" | "failed";
+export type Visibility = "private" | "organization" | "global";
+export type BrowseSection = "recipe" | "log" | "personal" | "organization";
 
 export function entryTypeLabel(type: EntryType, plural = false): string {
   if (type === "log") return plural ? "Logs" : "Log";
   return plural ? "Recipes" : "Recipe";
+}
+
+export function browseSectionLabel(section: BrowseSection): string {
+  switch (section) {
+    case "log":
+      return "Logs";
+    case "personal":
+      return "Personal";
+    case "organization":
+      return "Organization";
+    default:
+      return "Recipes";
+  }
 }
 
 export interface PlasmaSettings {
@@ -91,14 +106,32 @@ export interface Recipe {
   graphene: GrapheneSettings;
   microscope: MicroscopeSettings;
   outcome: OutcomeSettings;
+  visibility: Visibility;
+  organization_id?: string | null;
+  owner_id?: string | null;
   images?: RecipeImage[];
   created_at: string;
   updated_at: string;
 }
 
-export type RecipeInput = Omit<Recipe, "id" | "created_at" | "updated_at" | "images">;
+export type RecipeInput = Omit<Recipe, "id" | "created_at" | "updated_at" | "images" | "owner_id">;
 
-export function emptyRecipe(entryType: EntryType = "recipe"): RecipeInput {
+export interface Organization {
+  id: string;
+  name: string;
+  created_at?: string;
+}
+
+export interface MeUser {
+  id: string;
+  username: string;
+  organizations: Organization[];
+}
+
+export function emptyRecipe(
+  entryType: EntryType = "recipe",
+  opts?: { visibility?: Visibility; organization_id?: string | null },
+): RecipeInput {
   return {
     name: "",
     entry_type: entryType,
@@ -113,5 +146,7 @@ export function emptyRecipe(entryType: EntryType = "recipe"): RecipeInput {
     graphene: {},
     microscope: {},
     outcome: {},
+    visibility: opts?.visibility ?? "private",
+    organization_id: opts?.organization_id ?? null,
   };
 }
