@@ -23,21 +23,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 function NavItem({
   id,
   label,
-  section,
+  active,
   onSelect,
 }: {
   id: BrowseSection;
   label: string;
-  section: BrowseSection;
-  onSelect: (next: BrowseSection) => void;
+  active: boolean;
+  onSelect: () => void;
 }) {
-  const active = section === id;
   return (
     <button
       type="button"
       className={`section-nav-item${active ? " active" : ""}`}
       aria-current={active ? "page" : undefined}
-      onClick={() => onSelect(id)}
+      onClick={onSelect}
     >
       {label}
     </button>
@@ -45,14 +44,14 @@ function NavItem({
 }
 
 function SectionNav() {
-  const { section, setSection } = useEntrySection();
+  const { section, organizationId, setSection } = useEntrySection();
   const { user } = useUser();
   const router = useRouter();
   const pathname = usePathname();
-  const hasOrgs = (user?.organizations.length ?? 0) > 0;
+  const orgs = user?.organizations ?? [];
 
-  function select(next: BrowseSection) {
-    setSection(next);
+  function select(next: BrowseSection, orgId?: string | null) {
+    setSection(next, orgId);
     if (pathname !== "/") {
       router.push("/");
     }
@@ -62,8 +61,18 @@ function SectionNav() {
     <aside className="section-nav" aria-label="Entry sections">
       <p className="section-nav-label">Browse</p>
       <nav className="section-nav-list">
-        <NavItem id="recipe" label="Recipes" section={section} onSelect={select} />
-        <NavItem id="log" label="Logs" section={section} onSelect={select} />
+        <NavItem
+          id="recipe"
+          label="Recipes"
+          active={section === "recipe"}
+          onSelect={() => select("recipe")}
+        />
+        <NavItem
+          id="log"
+          label="Logs"
+          active={section === "log"}
+          onSelect={() => select("log")}
+        />
       </nav>
 
       <p className="section-nav-label section-nav-label-spaced">Private</p>
@@ -71,31 +80,38 @@ function SectionNav() {
         <NavItem
           id="personal-recipe"
           label="Recipes"
-          section={section}
-          onSelect={select}
+          active={section === "personal-recipe"}
+          onSelect={() => select("personal-recipe")}
         />
-        <NavItem id="personal-log" label="Logs" section={section} onSelect={select} />
+        <NavItem
+          id="personal-log"
+          label="Logs"
+          active={section === "personal-log"}
+          onSelect={() => select("personal-log")}
+        />
       </nav>
 
-      {hasOrgs && (
-        <>
-          <p className="section-nav-label section-nav-label-spaced">Organization</p>
+      {orgs.map((org) => (
+        <div key={org.id}>
+          <p className="section-nav-label section-nav-label-spaced" title={org.name}>
+            {org.name}
+          </p>
           <nav className="section-nav-list">
             <NavItem
               id="organization-recipe"
               label="Recipes"
-              section={section}
-              onSelect={select}
+              active={section === "organization-recipe" && organizationId === org.id}
+              onSelect={() => select("organization-recipe", org.id)}
             />
             <NavItem
               id="organization-log"
               label="Logs"
-              section={section}
-              onSelect={select}
+              active={section === "organization-log" && organizationId === org.id}
+              onSelect={() => select("organization-log", org.id)}
             />
           </nav>
-        </>
-      )}
+        </div>
+      ))}
     </aside>
   );
 }

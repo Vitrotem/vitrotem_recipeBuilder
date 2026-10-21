@@ -1,6 +1,7 @@
 import type { BrowseSection } from "./types";
 
 const SECTION_KEY = "vitrotem_entry_section";
+const ORG_KEY = "vitrotem_browse_org";
 
 const VALID: BrowseSection[] = [
   "recipe",
@@ -26,4 +27,14 @@ export function getEntrySection(): BrowseSection {
 
 export function setEntrySection(section: BrowseSection): void {
   localStorage.setItem(SECTION_KEY, section);
+}
+
+export function getBrowseOrganizationId(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(ORG_KEY);
+}
+
+export function setBrowseOrganizationId(orgId: string | null): void {
+  if (orgId) localStorage.setItem(ORG_KEY, orgId);
+  else localStorage.removeItem(ORG_KEY);
 }
