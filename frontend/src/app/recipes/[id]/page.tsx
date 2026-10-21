@@ -10,6 +10,7 @@ import RecipeForm from "@/components/RecipeForm";
 import RecipeImages from "@/components/RecipeImages";
 import RecipeMenu from "@/components/RecipeMenu";
 import RecipeView from "@/components/RecipeView";
+import { useUser } from "@/components/UserContext";
 import { deleteRecipe, getRecipe, setEntryType, updateRecipe } from "@/lib/api";
 import {
   browseSectionFromVisibility,
@@ -40,6 +41,7 @@ function RecipeDetailInner() {
   const id = String(params.id);
   const router = useRouter();
   const { setSection } = useEntrySection();
+  const { user } = useUser();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<"view" | "edit">(
@@ -58,6 +60,12 @@ function RecipeDetailInner() {
     const next = browseSectionFromVisibility(recipe.visibility, recipe.entry_type ?? "recipe");
     setSection(next, recipe.organization_id ?? null);
   }, [recipe, setSection]);
+
+  useEffect(() => {
+    if (!recipe || !user) return;
+    const owns = Boolean(recipe.owner_id && user.id === recipe.owner_id);
+    if (!owns && mode === "edit") setMode("view");
+  }, [recipe, user, mode]);
 
   useEffect(() => {
     if (!recipe || searchParams.get("saved") !== "1") return;
@@ -125,6 +133,8 @@ function RecipeDetailInner() {
 
   const kind = recipe.entry_type ?? "recipe";
   const noun = entryTypeLabel(kind).toLowerCase();
+  const isOwner = Boolean(user?.id && recipe.owner_id && user.id === recipe.owner_id);
+  const editMode = mode === "edit" && isOwner;
 
   const initial: RecipeInput = {
     name: recipe.name,
@@ -150,43 +160,45 @@ function RecipeDetailInner() {
         <div>
           <h1 className="page-title">{recipe.name}</h1>
           <p className="page-sub">
-            {mode === "edit"
+            {editMode
               ? `Edit ${noun} parameters and outcome`
               : `${entryTypeLabel(kind)} details`}
           </p>
         </div>
         <div className="recipe-page-actions">
           {toast && <span className="toast success toast-inline">{toast}</span>}
-          {mode === "edit" && (
+          {editMode && (
             <button type="button" className="btn btn-ghost" onClick={() => setMode("view")}>
               Cancel
             </button>
           )}
-          <RecipeMenu
-            entryType={kind}
-            onEdit={() => setMode("edit")}
-            onConvert={() => void handleConvert()}
-            onDelete={() => void handleDelete()}
-          />
+          {isOwner && (
+            <RecipeMenu
+              entryType={kind}
+              onEdit={() => setMode("edit")}
+              onConvert={() => void handleConvert()}
+              onDelete={() => void handleDelete()}
+            />
+          )}
         </div>
       </div>
 
-      {mode === "view" ? (
-        <RecipeView recipe={recipe} />
-      ) : (
+      {editMode ? (
         <RecipeForm
           key={`${recipe.id}-edit`}
           initial={initial}
           submitLabel="Save changes"
           onSubmit={handleSubmit}
         />
+      ) : (
+        <RecipeView recipe={recipe} />
       )}
 
       <RecipeImages
         recipeId={recipe.id}
         images={recipe.images ?? EMPTY_IMAGES}
         onChange={setRecipe}
-        readOnly={mode === "view"}
+        readOnly={!editMode}
       />
     </main>
   );
