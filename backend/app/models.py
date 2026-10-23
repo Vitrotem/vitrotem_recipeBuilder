@@ -2,11 +2,11 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class EntryType(str, Enum):
-    recipe = "recipe"
+    protocol = "protocol"
     log = "log"
 
 
@@ -42,10 +42,31 @@ class PlasmaSettings(BaseModel):
 
 
 class NaiadSettings(BaseModel):
-    blot_time_ms: Optional[float] = None
+    blot_times_ms: list[Optional[float]] = Field(default_factory=lambda: [None] * 5)
     humidifier_enabled: Optional[bool] = None
     rh_percent: Optional[float] = None
     blot_count: Optional[int] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def migrate_legacy_blot_time(cls, data: object) -> object:
+        if isinstance(data, dict) and "blot_times_ms" not in data and "blot_time_ms" in data:
+            data = {**data, "blot_times_ms": data.get("blot_time_ms")}
+        return data
+
+    @field_validator("blot_times_ms", mode="before")
+    @classmethod
+    def normalize_blot_times(cls, v: object) -> list[Optional[float]]:
+        if v is None:
+            return [None] * 5
+        if isinstance(v, (int, float)):
+            return [float(v), None, None, None, None]
+        if isinstance(v, list):
+            times = list(v)[:5]
+            while len(times) < 5:
+                times.append(None)
+            return times
+        return [None] * 5
 
 
 class SampleSettings(BaseModel):
@@ -93,7 +114,7 @@ class OutcomeSettings(BaseModel):
     sample_visible: Optional[bool] = None
 
 
-class RecipeImage(BaseModel):
+class ProtocolImage(BaseModel):
     id: str
     filename: str
     content_type: str
@@ -103,9 +124,9 @@ class RecipeImage(BaseModel):
     created_at: datetime
 
 
-class RecipeBase(BaseModel):
+class ProtocolBase(BaseModel):
     name: str
-    entry_type: EntryType = EntryType.recipe
+    entry_type: EntryType = EntryType.protocol
     modality: Modality = Modality.cryo
     author: Optional[str] = None
     tags: list[str] = Field(default_factory=list)
@@ -121,11 +142,11 @@ class RecipeBase(BaseModel):
     organization_id: Optional[str] = None
 
 
-class RecipeCreate(RecipeBase):
+class ProtocolCreate(ProtocolBase):
     pass
 
 
-class RecipeUpdate(RecipeBase):
+class ProtocolUpdate(ProtocolBase):
     pass
 
 
@@ -133,12 +154,12 @@ class EntryTypeUpdate(BaseModel):
     entry_type: EntryType
 
 
-class RecipeOut(RecipeBase):
+class ProtocolOut(ProtocolBase):
     id: str
     owner_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime
-    images: list[RecipeImage] = Field(default_factory=list)
+    images: list[ProtocolImage] = Field(default_factory=list)
 
 
 class LoginRequest(BaseModel):
@@ -177,6 +198,7 @@ class OrganizationOut(BaseModel):
     id: str
     name: str
     created_at: datetime
+    icon_id: Optional[str] = None
 
 
 class OrganizationMember(BaseModel):
@@ -214,6 +236,7 @@ class InviteAcceptRequest(BaseModel):
 class MeOrganization(BaseModel):
     id: str
     name: str
+    icon_id: Optional[str] = None
 
 
 class MeResponse(BaseModel):

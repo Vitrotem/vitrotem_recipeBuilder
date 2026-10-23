@@ -7,29 +7,29 @@ import AppShell from "@/components/AppShell";
 import { useEntrySection } from "@/components/EntrySectionContext";
 import PageLoading from "@/components/PageLoading";
 import { useUser } from "@/components/UserContext";
-import { listRecipes } from "@/lib/api";
+import { listProtocols } from "@/lib/api";
 import {
   browseSectionEntryType,
   browseSectionLabel,
   browseSectionScope,
   entryTypeLabel,
-  type Recipe,
+  type Protocol,
 } from "@/lib/types";
 
 export default function HomePage() {
   return (
     <AuthGuard>
       <AppShell>
-        <RecipeList />
+        <ProtocolList />
       </AppShell>
     </AuthGuard>
   );
 }
 
-function RecipeList() {
+function ProtocolList() {
   const { section, organizationId } = useEntrySection();
   const { user } = useUser();
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [protocols, setProtocols] = useState<Protocol[]>([]);
   const [q, setQ] = useState("");
   const [modality, setModality] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -48,14 +48,14 @@ function RecipeList() {
     setLoading(true);
     setError(null);
     try {
-      const data = await listRecipes({
+      const data = await listProtocols({
         q: q || undefined,
         modality: modality || undefined,
         entry_type: entryType,
         scope,
         organization_id: scope === "organization" ? organizationId || undefined : undefined,
       });
-      setRecipes(data);
+      setProtocols(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : `Failed to load ${nounPlural}`);
     } finally {
@@ -74,7 +74,7 @@ function RecipeList() {
       : scope === "organization"
         ? `${orgName ?? "Organization"} ${nounPlural} shared with members`
         : entryType === "log"
-          ? "Public experimental notes and runs — upgrade any log to a recipe when it is ready"
+          ? "Public experimental notes and runs — upgrade any log to a protocol when it is ready"
           : "Public graphene liquid cell protocols for cryo-EM and room-temperature EM";
 
   const newHref = (() => {
@@ -84,7 +84,7 @@ function RecipeList() {
       params.set("visibility", "organization");
       if (organizationId) params.set("organization_id", organizationId);
     }
-    return `/recipes/new?${params.toString()}`;
+    return `/protocols/new?${params.toString()}`;
   })();
 
   return (
@@ -109,17 +109,17 @@ function RecipeList() {
 
       {loading ? (
         <PageLoading message={`Loading ${nounPlural}…`} />
-      ) : recipes.length === 0 ? (
+      ) : protocols.length === 0 ? (
         <div className="empty-state">
           No {nounPlural} yet. <Link href={newHref}>Create one</Link>.
         </div>
       ) : (
-        <ul className="recipe-list">
-          {recipes.map((r) => (
+        <ul className="protocol-list">
+          {protocols.map((r) => (
             <li key={r.id}>
-              <Link href={`/recipes/${r.id}`} className="recipe-row">
+              <Link href={`/protocols/${r.id}`} className="protocol-row">
                 <h3>{r.name}</h3>
-                <div className="recipe-meta">
+                <div className="protocol-meta">
                   <span className={`badge ${r.modality === "rt" ? "badge-rt" : ""}`}>
                     {r.modality === "cryo" ? "Cryo" : "RT"}
                   </span>

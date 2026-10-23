@@ -1,15 +1,21 @@
+import asyncio
 import hashlib
+import io
 import secrets
 from datetime import datetime, timedelta, timezone
 
 from bson import ObjectId
 from bson.errors import InvalidId
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.responses import Response
+from gridfs.errors import NoFile
+from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError
 
 from app.auth import get_current_user
 from app.config import get_settings
 from app.database import get_db
+from app.images import resize_to_icon
 from app.models import (
     InviteAcceptRequest,
     InviteCreateResponse,
@@ -17,8 +23,12 @@ from app.models import (
     OrganizationMember,
     OrganizationOut,
 )
+from app.storage import get_org_icon_fs
 
 router = APIRouter(prefix="/organizations", tags=["organizations"])
+
+ALLOWED_ICON_TYPES = {"image/jpeg", "image/png", "image/webp"}
+MAX_ICON_BYTES = 5 * 1024 * 1024
 
 
 def _parse_oid(value: str, label: str = "Resource") -> ObjectId:
@@ -32,6 +42,27 @@ def _hash_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
+def _org_out(org: dict) -> OrganizationOut:
+    icon_id = org.get("icon_id")
+    return OrganizationOut(
+        id=str(org["_id"]),
+        name=org["name"],
+        created_at=org["created_at"],
+        icon_id=str(icon_id) if icon_id else None,
+    )
+
+
+async def _require_member(org_id: str, user: dict) -> ObjectId:
+    oid = _parse_oid(org_id, "Organization")
+    org = await get_db().organizations.find_one({"_id": oid})
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    member_ids = {str(x) for x in (user.get("organization_ids") or [])}
+    if org_id not in member_ids:
+        raise HTTPException(status_code=403, detail="Not a member of this organization")
+    return oid
+
+
 @router.get("", response_model=list[OrganizationOut])
 async def list_my_organizations(user: dict = Depends(get_current_user)) -> list[OrganizationOut]:
     db = get_db()
@@ -41,13 +72,7 @@ async def list_my_organizations(user: dict = Depends(get_current_user)) -> list[
     out: list[OrganizationOut] = []
     cursor = db.organizations.find({"_id": {"$in": org_ids}})
     async for org in cursor:
-        out.append(
-            OrganizationOut(
-                id=str(org["_id"]),
-                name=org["name"],
-                created_at=org["created_at"],
-            )
-        )
+        out.append(_org_out(org))
     return out
 
 
@@ -63,6 +88,7 @@ async def create_organization(
         "name_normalized": body.name.lower(),
         "created_by": ObjectId(user["id"]),
         "created_at": now,
+        "icon_id": None,
     }
     try:
         result = await db.organizations.insert_one(doc)
@@ -76,7 +102,12 @@ async def create_organization(
         {"_id": ObjectId(user["id"])},
         {"$addToSet": {"organization_ids": result.inserted_id}},
     )
-    return OrganizationOut(id=str(result.inserted_id), name=body.name, created_at=now)
+    return OrganizationOut(
+        id=str(result.inserted_id),
+        name=body.name,
+        created_at=now,
+        icon_id=None,
+    )
 
 
 @router.post("/invites/accept", response_model=OrganizationOut)
@@ -124,11 +155,7 @@ async def accept_invite(
         {"_id": ObjectId(user["id"])},
         {"$addToSet": {"organization_ids": org_id}},
     )
-    return OrganizationOut(
-        id=str(org["_id"]),
-        name=org["name"],
-        created_at=org["created_at"],
-    )
+    return _org_out(org)
 
 
 @router.get("/{org_id}/members", response_model=list[OrganizationMember])
@@ -137,14 +164,7 @@ async def list_members(
     user: dict = Depends(get_current_user),
 ) -> list[OrganizationMember]:
     db = get_db()
-    oid = _parse_oid(org_id, "Organization")
-    org = await db.organizations.find_one({"_id": oid})
-    if not org:
-        raise HTTPException(status_code=404, detail="Organization not found")
-
-    member_ids = {str(x) for x in (user.get("organization_ids") or [])}
-    if org_id not in member_ids:
-        raise HTTPException(status_code=403, detail="Not a member of this organization")
+    oid = await _require_member(org_id, user)
 
     out: list[OrganizationMember] = []
     cursor = db.users.find(
@@ -171,14 +191,7 @@ async def create_invite(
     user: dict = Depends(get_current_user),
 ) -> InviteCreateResponse:
     db = get_db()
-    oid = _parse_oid(org_id, "Organization")
-    org = await db.organizations.find_one({"_id": oid})
-    if not org:
-        raise HTTPException(status_code=404, detail="Organization not found")
-
-    member_ids = {str(x) for x in (user.get("organization_ids") or [])}
-    if org_id not in member_ids:
-        raise HTTPException(status_code=403, detail="Not a member of this organization")
+    oid = await _require_member(org_id, user)
 
     settings = get_settings()
     token = secrets.token_urlsafe(32)
@@ -196,3 +209,114 @@ async def create_invite(
         }
     )
     return InviteCreateResponse(token=token, expires_at=expires_at)
+
+
+@router.post("/{org_id}/icon", response_model=OrganizationOut)
+async def upload_organization_icon(
+    org_id: str,
+    file: UploadFile = File(...),
+    user: dict = Depends(get_current_user),
+) -> OrganizationOut:
+    db = get_db()
+    oid = await _require_member(org_id, user)
+    org = await db.organizations.find_one({"_id": oid})
+    assert org is not None
+
+    content_type = (file.content_type or "").lower()
+    if content_type not in ALLOWED_ICON_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail="Only JPEG, PNG, and WebP images are allowed",
+        )
+
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="Empty file")
+    if len(data) > MAX_ICON_BYTES:
+        raise HTTPException(status_code=400, detail="Image must be 5 MB or smaller")
+
+    try:
+        resized, out_type = await asyncio.to_thread(resize_to_icon, data, 100)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=400, detail="Invalid image file") from exc
+
+    fs = get_org_icon_fs()
+    old_icon_id = org.get("icon_id")
+    if old_icon_id:
+        try:
+            await fs.delete(ObjectId(str(old_icon_id)))
+        except (InvalidId, NoFile):
+            pass
+
+    file_id = await fs.upload_from_stream(
+        file.filename or "icon.png",
+        io.BytesIO(resized),
+        metadata={
+            "organization_id": org_id,
+            "content_type": out_type,
+        },
+    )
+
+    updated = await db.organizations.find_one_and_update(
+        {"_id": oid},
+        {"$set": {"icon_id": file_id}},
+        return_document=ReturnDocument.AFTER,
+    )
+    assert updated is not None
+    return _org_out(updated)
+
+
+@router.get("/{org_id}/icon")
+async def get_organization_icon(
+    org_id: str,
+    user: dict = Depends(get_current_user),
+) -> Response:
+    db = get_db()
+    oid = await _require_member(org_id, user)
+    org = await db.organizations.find_one({"_id": oid})
+    assert org is not None
+
+    icon_id = org.get("icon_id")
+    if not icon_id:
+        raise HTTPException(status_code=404, detail="Organization has no icon")
+
+    fs = get_org_icon_fs()
+    try:
+        grid_out = await fs.open_download_stream(ObjectId(str(icon_id)))
+        raw = await grid_out.read()
+        meta_type = (grid_out.metadata or {}).get("content_type") or "image/png"
+    except (InvalidId, NoFile) as exc:
+        raise HTTPException(status_code=404, detail="Icon not found") from exc
+
+    return Response(
+        content=raw,
+        media_type=meta_type,
+        headers={"Cache-Control": "private, max-age=3600"},
+    )
+
+
+@router.delete("/{org_id}/icon", response_model=OrganizationOut)
+async def delete_organization_icon(
+    org_id: str,
+    user: dict = Depends(get_current_user),
+) -> OrganizationOut:
+    db = get_db()
+    oid = await _require_member(org_id, user)
+    org = await db.organizations.find_one({"_id": oid})
+    assert org is not None
+
+    icon_id = org.get("icon_id")
+    if icon_id:
+        fs = get_org_icon_fs()
+        try:
+            await fs.delete(ObjectId(str(icon_id)))
+        except (InvalidId, NoFile):
+            pass
+
+    updated = await db.organizations.find_one_and_update(
+        {"_id": oid},
+        {"$set": {"icon_id": None}},
+        return_document=ReturnDocument.AFTER,
+    )
+    assert updated is not None
+    return _org_out(updated)

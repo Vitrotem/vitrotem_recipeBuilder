@@ -105,8 +105,8 @@ function LoginInner() {
         </div>
         <p>
           {mode === "login"
-            ? "Sign in to the graphene liquid cell recipe builder"
-            : "Create an account to save recipes and join organizations"}
+            ? "Sign in to the graphene liquid cell protocol builder"
+            : "Create an account to save protocols and join organizations"}
         </p>
         <div className="login-tabs" role="tablist">
           <button

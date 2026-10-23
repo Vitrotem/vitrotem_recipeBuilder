@@ -60,7 +60,14 @@ async def me(user: dict = Depends(get_current_user)) -> MeResponse:
     if org_ids:
         cursor = db.organizations.find({"_id": {"$in": org_ids}})
         async for org in cursor:
-            orgs.append(MeOrganization(id=str(org["_id"]), name=org["name"]))
+            icon_id = org.get("icon_id")
+            orgs.append(
+                MeOrganization(
+                    id=str(org["_id"]),
+                    name=org["name"],
+                    icon_id=str(icon_id) if icon_id else None,
+                )
+            )
         # Stable order matching membership list where possible
         order = {str(oid): i for i, oid in enumerate(org_ids)}
         orgs.sort(key=lambda o: order.get(o.id, 999))

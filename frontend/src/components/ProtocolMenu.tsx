@@ -10,11 +10,11 @@ type Props = {
   onDelete: () => void;
 };
 
-export default function RecipeMenu({ entryType, onEdit, onConvert, onDelete }: Props) {
+export default function ProtocolMenu({ entryType, onEdit, onConvert, onDelete }: Props) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const convertLabel =
-    entryType === "log" ? "Upgrade to recipe" : "Downgrade to log";
+    entryType === "log" ? "Upgrade to protocol" : "Downgrade to log";
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -32,10 +32,10 @@ export default function RecipeMenu({ entryType, onEdit, onConvert, onDelete }: P
   }, []);
 
   return (
-    <div className="recipe-menu" ref={rootRef}>
+    <div className="protocol-menu" ref={rootRef}>
       <button
         type="button"
-        className="recipe-menu-trigger"
+        className="protocol-menu-trigger"
         aria-label="Actions"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
@@ -43,7 +43,7 @@ export default function RecipeMenu({ entryType, onEdit, onConvert, onDelete }: P
         <span aria-hidden>⋯</span>
       </button>
       {open && (
-        <div className="recipe-menu-dropdown" role="menu">
+        <div className="protocol-menu-dropdown" role="menu">
           <button
             type="button"
             role="menuitem"

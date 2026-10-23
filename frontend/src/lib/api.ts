@@ -1,5 +1,5 @@
 import { getToken, clearToken } from "./auth";
-import type { EntryType, MeUser, Organization, Recipe, RecipeInput, Visibility } from "./types";
+import type { EntryType, MeUser, Organization, Protocol, ProtocolInput, Visibility } from "./types";
 
 /** Same-origin proxy — backend URL stays in server-only `API_URL` (next.config rewrites). */
 const API_BASE = "/api";
@@ -101,14 +101,39 @@ export async function acceptInvite(token: string): Promise<Organization> {
   });
 }
 
-export async function listRecipes(params?: {
+export async function uploadOrganizationIcon(
+  orgId: string,
+  file: File,
+): Promise<Organization> {
+  const body = new FormData();
+  body.append("file", file);
+  return request(`/organizations/${orgId}/icon`, {
+    method: "POST",
+    body,
+    headers: authHeaders(false),
+  });
+}
+
+export async function deleteOrganizationIcon(orgId: string): Promise<Organization> {
+  return request(`/organizations/${orgId}/icon`, { method: "DELETE" });
+}
+
+export async function fetchOrganizationIconBlob(orgId: string): Promise<Blob> {
+  const headers = authHeaders(false);
+  const res = await fetch(`${API_BASE}/organizations/${orgId}/icon`, { headers });
+  if (res.status === 401) handleUnauthorized();
+  if (!res.ok) throw new Error("Failed to load organization icon");
+  return res.blob();
+}
+
+export async function listProtocols(params?: {
   q?: string;
   modality?: string;
   tag?: string;
   entry_type?: EntryType;
   scope?: "personal" | "organization" | "global";
   organization_id?: string;
-}): Promise<Recipe[]> {
+}): Promise<Protocol[]> {
   const sp = new URLSearchParams();
   if (params?.q) sp.set("q", params.q);
   if (params?.modality) sp.set("modality", params.modality);
@@ -117,55 +142,55 @@ export async function listRecipes(params?: {
   if (params?.scope) sp.set("scope", params.scope);
   if (params?.organization_id) sp.set("organization_id", params.organization_id);
   const qs = sp.toString();
-  return request(`/recipes${qs ? `?${qs}` : ""}`);
+  return request(`/protocols${qs ? `?${qs}` : ""}`);
 }
 
-export async function getRecipe(id: string): Promise<Recipe> {
-  return request(`/recipes/${id}`);
+export async function getProtocol(id: string): Promise<Protocol> {
+  return request(`/protocols/${id}`);
 }
 
-export async function createRecipe(body: RecipeInput): Promise<Recipe> {
-  return request("/recipes", { method: "POST", body: JSON.stringify(body) });
+export async function createProtocol(body: ProtocolInput): Promise<Protocol> {
+  return request("/protocols", { method: "POST", body: JSON.stringify(body) });
 }
 
-export async function updateRecipe(id: string, body: RecipeInput): Promise<Recipe> {
-  return request(`/recipes/${id}`, { method: "PUT", body: JSON.stringify(body) });
+export async function updateProtocol(id: string, body: ProtocolInput): Promise<Protocol> {
+  return request(`/protocols/${id}`, { method: "PUT", body: JSON.stringify(body) });
 }
 
-export async function deleteRecipe(id: string): Promise<void> {
-  return request(`/recipes/${id}`, { method: "DELETE" });
+export async function deleteProtocol(id: string): Promise<void> {
+  return request(`/protocols/${id}`, { method: "DELETE" });
 }
 
-export async function setEntryType(id: string, entryType: EntryType): Promise<Recipe> {
-  return request(`/recipes/${id}/entry-type`, {
+export async function setEntryType(id: string, entryType: EntryType): Promise<Protocol> {
+  return request(`/protocols/${id}/entry-type`, {
     method: "PATCH",
     body: JSON.stringify({ entry_type: entryType }),
   });
 }
 
-export async function uploadRecipeImage(
-  recipeId: string,
+export async function uploadProtocolImage(
+  protocolId: string,
   file: File,
   opts?: { caption?: string; kind?: string },
-): Promise<Recipe> {
+): Promise<Protocol> {
   const body = new FormData();
   body.append("file", file);
   if (opts?.caption) body.append("caption", opts.caption);
   if (opts?.kind) body.append("kind", opts.kind);
-  return request(`/recipes/${recipeId}/images`, {
+  return request(`/protocols/${protocolId}/images`, {
     method: "POST",
     body,
     headers: authHeaders(false),
   });
 }
 
-export async function deleteRecipeImage(recipeId: string, imageId: string): Promise<Recipe> {
-  return request(`/recipes/${recipeId}/images/${imageId}`, { method: "DELETE" });
+export async function deleteProtocolImage(protocolId: string, imageId: string): Promise<Protocol> {
+  return request(`/protocols/${protocolId}/images/${imageId}`, { method: "DELETE" });
 }
 
-export async function fetchRecipeImageBlob(recipeId: string, imageId: string): Promise<Blob> {
+export async function fetchProtocolImageBlob(protocolId: string, imageId: string): Promise<Blob> {
   const headers = authHeaders(false);
-  const res = await fetch(`${API_BASE}/recipes/${recipeId}/images/${imageId}`, { headers });
+  const res = await fetch(`${API_BASE}/protocols/${protocolId}/images/${imageId}`, { headers });
   if (res.status === 401) handleUnauthorized();
   if (!res.ok) throw new Error("Failed to load image");
   return res.blob();

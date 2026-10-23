@@ -7,13 +7,24 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.auth import hash_password
 from app.config import get_settings
 from app.database import close_client, get_db
-from app.routers import auth, organizations, recipes
+from app.routers import auth, organizations, protocols
+
+
+async def _rename_collection_if_needed(db, old: str, new: str) -> None:
+    names = await db.list_collection_names()
+    if old in names and new not in names:
+        await db[old].rename(new)
 
 
 async def seed_and_migrate() -> None:
     settings = get_settings()
     db = get_db()
     now = datetime.now(timezone.utc)
+
+    # Recipe → Protocol collection / GridFS renames
+    await _rename_collection_if_needed(db, "recipes", "protocols")
+    await _rename_collection_if_needed(db, "recipe_images.files", "protocol_images.files")
+    await _rename_collection_if_needed(db, "recipe_images.chunks", "protocol_images.chunks")
 
     existing = await db.users.find_one(
         {"$or": [{"username_normalized": settings.admin_username.lower()}, {"username": settings.admin_username}]}
@@ -44,28 +55,33 @@ async def seed_and_migrate() -> None:
     admin = await db.users.find_one({"username_normalized": settings.admin_username.lower()})
     admin_id = admin["_id"] if admin else None
 
-    await db.recipes.update_many(
+    # Legacy entry_type "recipe" (and missing) → "protocol"
+    await db.protocols.update_many(
+        {"entry_type": {"$in": ["recipe", None]}},
+        {"$set": {"entry_type": "protocol"}},
+    )
+    await db.protocols.update_many(
         {"entry_type": {"$exists": False}},
-        {"$set": {"entry_type": "recipe"}},
+        {"$set": {"entry_type": "protocol"}},
     )
     # Legacy shared-lab docs become globally visible
     legacy_filter = {"visibility": {"$exists": False}}
     legacy_set: dict = {"visibility": "global"}
     if admin_id is not None:
         legacy_set["owner_id"] = admin_id
-    await db.recipes.update_many(legacy_filter, {"$set": legacy_set})
+    await db.protocols.update_many(legacy_filter, {"$set": legacy_set})
 
     await db.users.create_index("username_normalized", unique=True)
     await db.organizations.create_index("name_normalized", unique=True)
     await db.organization_invites.create_index("token_hash", unique=True)
     await db.organization_invites.create_index("organization_id")
-    await db.recipes.create_index("name")
-    await db.recipes.create_index("modality")
-    await db.recipes.create_index("tags")
-    await db.recipes.create_index("updated_at")
-    await db.recipes.create_index("entry_type")
-    await db.recipes.create_index([("visibility", 1), ("organization_id", 1)])
-    await db.recipes.create_index([("owner_id", 1), ("visibility", 1)])
+    await db.protocols.create_index("name")
+    await db.protocols.create_index("modality")
+    await db.protocols.create_index("tags")
+    await db.protocols.create_index("updated_at")
+    await db.protocols.create_index("entry_type")
+    await db.protocols.create_index([("visibility", 1), ("organization_id", 1)])
+    await db.protocols.create_index([("owner_id", 1), ("visibility", 1)])
 
 
 @asynccontextmanager
@@ -79,7 +95,7 @@ async def lifespan(_app: FastAPI):
 
 
 settings = get_settings()
-app = FastAPI(title="VitroTEM Recipe Builder API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="VitroTEM Protocol Builder API", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -91,7 +107,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(organizations.router)
-app.include_router(recipes.router)
+app.include_router(protocols.router)
 
 
 @app.get("/health")

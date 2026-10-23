@@ -1,6 +1,6 @@
-# VitroTEM Recipe Builder
+# VitroTEM Protocol Builder
 
-Graphene liquid cell recipe builder for cryo-EM and room-temperature EM.
+Graphene liquid cell protocol builder for cryo-EM and room-temperature EM.
 
 - **frontend/** — Next.js app (deploy to Vercel)
 - **backend/** — FastAPI API (deploy to Fly.io) with MongoDB Atlas

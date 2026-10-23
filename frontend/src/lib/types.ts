@@ -1,19 +1,19 @@
-export type EntryType = "recipe" | "log";
+export type EntryType = "protocol" | "log";
 export type Modality = "cryo" | "rt";
 export type PlasmaTarget = "bottom" | "top" | "both";
 export type OutcomeStatus = "good" | "partial" | "failed";
 export type Visibility = "private" | "organization" | "global";
 export type BrowseSection =
-  | "recipe"
+  | "protocol"
   | "log"
-  | "personal-recipe"
+  | "personal-protocol"
   | "personal-log"
-  | "organization-recipe"
+  | "organization-protocol"
   | "organization-log";
 
 export function entryTypeLabel(type: EntryType, plural = false): string {
   if (type === "log") return plural ? "Logs" : "Log";
-  return plural ? "Recipes" : "Recipe";
+  return plural ? "Protocols" : "Protocol";
 }
 
 export function browseSectionScope(
@@ -25,7 +25,7 @@ export function browseSectionScope(
 }
 
 export function browseSectionEntryType(section: BrowseSection): EntryType {
-  return section.endsWith("log") ? "log" : "recipe";
+  return section.endsWith("log") ? "log" : "protocol";
 }
 
 export function browseSectionFromVisibility(
@@ -33,10 +33,10 @@ export function browseSectionFromVisibility(
   entryType: EntryType,
 ): BrowseSection {
   if (visibility === "private") {
-    return entryType === "log" ? "personal-log" : "personal-recipe";
+    return entryType === "log" ? "personal-log" : "personal-protocol";
   }
   if (visibility === "organization") {
-    return entryType === "log" ? "organization-log" : "organization-recipe";
+    return entryType === "log" ? "organization-log" : "organization-protocol";
   }
   return entryType;
 }
@@ -63,11 +63,47 @@ export interface PlasmaSettings {
   target?: PlasmaTarget | null;
 }
 
+export const GRID_COUNT = 5;
+
+export type BlotTimesMs = [
+  number | null,
+  number | null,
+  number | null,
+  number | null,
+  number | null,
+];
+
 export interface NaiadSettings {
+  /** Per-grid blot times (5 slots). Legacy single `blot_time_ms` is migrated on load. */
+  blot_times_ms?: BlotTimesMs | (number | null)[] | null;
   blot_time_ms?: number | null;
   humidifier_enabled?: boolean | null;
   rh_percent?: number | null;
   blot_count?: number | null;
+}
+
+export function emptyBlotTimes(): BlotTimesMs {
+  return [null, null, null, null, null];
+}
+
+export function normalizeBlotTimes(
+  naiad?: NaiadSettings | null,
+): BlotTimesMs {
+  const times = naiad?.blot_times_ms;
+  if (Array.isArray(times)) {
+    const out = emptyBlotTimes();
+    for (let i = 0; i < GRID_COUNT; i++) {
+      const v = times[i];
+      out[i] = v == null || Number.isNaN(Number(v)) ? null : Number(v);
+    }
+    return out;
+  }
+  if (naiad?.blot_time_ms != null && !Number.isNaN(Number(naiad.blot_time_ms))) {
+    const out = emptyBlotTimes();
+    out[0] = Number(naiad.blot_time_ms);
+    return out;
+  }
+  return emptyBlotTimes();
 }
 
 export interface SampleSettings {
@@ -115,7 +151,7 @@ export interface OutcomeSettings {
   sample_visible?: boolean | null;
 }
 
-export interface RecipeImage {
+export interface ProtocolImage {
   id: string;
   filename: string;
   content_type: string;
@@ -125,7 +161,7 @@ export interface RecipeImage {
   created_at: string;
 }
 
-export interface Recipe {
+export interface Protocol {
   id: string;
   name: string;
   entry_type: EntryType;
@@ -143,17 +179,18 @@ export interface Recipe {
   visibility: Visibility;
   organization_id?: string | null;
   owner_id?: string | null;
-  images?: RecipeImage[];
+  images?: ProtocolImage[];
   created_at: string;
   updated_at: string;
 }
 
-export type RecipeInput = Omit<Recipe, "id" | "created_at" | "updated_at" | "images" | "owner_id">;
+export type ProtocolInput = Omit<Protocol, "id" | "created_at" | "updated_at" | "images" | "owner_id">;
 
 export interface Organization {
   id: string;
   name: string;
   created_at?: string;
+  icon_id?: string | null;
 }
 
 export interface MeUser {
@@ -162,10 +199,10 @@ export interface MeUser {
   organizations: Organization[];
 }
 
-export function emptyRecipe(
-  entryType: EntryType = "recipe",
+export function emptyProtocol(
+  entryType: EntryType = "protocol",
   opts?: { visibility?: Visibility; organization_id?: string | null },
-): RecipeInput {
+): ProtocolInput {
   return {
     name: "",
     entry_type: entryType,
@@ -174,7 +211,7 @@ export function emptyRecipe(
     tags: [],
     notes: "",
     plasma: {},
-    naiad: { humidifier_enabled: false },
+    naiad: { humidifier_enabled: false, blot_times_ms: emptyBlotTimes() },
     sample: {},
     grid: {},
     graphene: {},

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { Recipe } from "@/lib/types";
+import { normalizeBlotTimes, type Protocol } from "@/lib/types";
 
 function Field({ label, value }: { label: string; value?: string | number | boolean | null }) {
   if (value === null || value === undefined || value === "") return null;
@@ -25,41 +25,41 @@ function Section({ title, fields }: { title: string; fields: ReactNode[] }) {
   );
 }
 
-export default function RecipeView({ recipe }: { recipe: Recipe }) {
-  const { plasma, naiad, sample, grid, graphene, microscope, outcome } = recipe;
+export default function ProtocolView({ protocol }: { protocol: Protocol }) {
+  const { plasma, naiad, sample, grid, graphene, microscope, outcome } = protocol;
 
   return (
-    <div className="recipe-view">
+    <div className="protocol-view">
       <Section
         title="Metadata"
         fields={[
           <Field
             key="mod"
             label="Modality"
-            value={recipe.modality === "cryo" ? "Cryo-EM" : "Room Temperature TEM"}
+            value={protocol.modality === "cryo" ? "Cryo-EM" : "Room Temperature TEM"}
           />,
-          <Field key="author" label="Author" value={recipe.author} />,
+          <Field key="author" label="Author" value={protocol.author} />,
           <Field
             key="vis"
             label="Visibility"
             value={
-              recipe.visibility === "private"
+              protocol.visibility === "private"
                 ? "Private"
-                : recipe.visibility === "organization"
+                : protocol.visibility === "organization"
                   ? "Organization"
                   : "Anyone"
             }
           />,
-          <Field key="tags" label="Tags" value={recipe.tags?.length ? recipe.tags.join(", ") : null} />,
+          <Field key="tags" label="Tags" value={protocol.tags?.length ? protocol.tags.join(", ") : null} />,
           <Field
             key="upd"
             label="Updated"
-            value={recipe.updated_at ? new Date(recipe.updated_at).toLocaleString() : null}
+            value={protocol.updated_at ? new Date(protocol.updated_at).toLocaleString() : null}
           />,
-          recipe.notes ? (
+          protocol.notes ? (
             <div key="notes" className="view-param view-param-wide">
               <span className="view-param-label">Notes</span>
-              <span className="view-param-value view-param-notes">{recipe.notes}</span>
+              <span className="view-param-value view-param-notes">{protocol.notes}</span>
             </div>
           ) : null,
         ]}
@@ -126,7 +126,9 @@ export default function RecipeView({ recipe }: { recipe: Recipe }) {
       <Section
         title="NAIAD settings"
         fields={[
-          <Field key="bt" label="Blot time (ms)" value={naiad?.blot_time_ms} />,
+          ...normalizeBlotTimes(naiad).map((t, i) => (
+            <Field key={`bt-${i}`} label={`Blot time grid ${i + 1} (ms)`} value={t} />
+          )),
           <Field key="rh" label="RH setpoint (%)" value={naiad?.rh_percent} />,
           <Field key="bc" label="Blot count" value={naiad?.blot_count} />,
           <Field key="h" label="Humidifier" value={naiad?.humidifier_enabled} />,

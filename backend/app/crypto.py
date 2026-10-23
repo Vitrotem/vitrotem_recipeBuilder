@@ -1,4 +1,4 @@
-"""Server-side encryption at rest for recipe content and images."""
+"""Server-side encryption at rest for protocol content and images."""
 
 from __future__ import annotations
 
@@ -67,7 +67,7 @@ def unpack_content(content_enc: str) -> dict[str, Any]:
     return {field: raw.get(field) for field in CONTENT_FIELDS}
 
 
-def recipe_to_storage(payload: dict[str, Any]) -> dict[str, Any]:
+def protocol_to_storage(payload: dict[str, Any]) -> dict[str, Any]:
     """Split plaintext metadata from encrypted content for MongoDB storage."""
     doc = {k: v for k, v in payload.items() if k not in CONTENT_FIELDS}
     doc["content_enc"] = pack_content(payload)
@@ -76,8 +76,8 @@ def recipe_to_storage(payload: dict[str, Any]) -> dict[str, Any]:
     return doc
 
 
-def recipe_from_storage(doc: dict[str, Any]) -> dict[str, Any]:
-    """Merge decrypted content into a recipe document for API responses."""
+def protocol_from_storage(doc: dict[str, Any]) -> dict[str, Any]:
+    """Merge decrypted content into a protocol document for API responses."""
     out = dict(doc)
     content_enc = out.pop("content_enc", None)
     if content_enc:

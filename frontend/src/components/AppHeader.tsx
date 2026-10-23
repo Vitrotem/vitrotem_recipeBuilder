@@ -11,7 +11,7 @@ export default function AppHeader() {
   const router = useRouter();
   const { section, organizationId, newEntryType } = useEntrySection();
   const { user } = useUser();
-  const newLabel = newEntryType === "log" ? "New log" : "New recipe";
+  const newLabel = newEntryType === "log" ? "New log" : "New protocol";
   const scope = browseSectionScope(section);
 
   function newHref(): string {
@@ -25,7 +25,7 @@ export default function AppHeader() {
         params.set("organization_id", orgId);
       }
     }
-    return `/recipes/new?${params.toString()}`;
+    return `/protocols/new?${params.toString()}`;
   }
 
   function logout() {
@@ -44,7 +44,7 @@ export default function AppHeader() {
           </span>
           <span className="brand-text">
             <strong>vitroTEM</strong>
-            <em>Recipe Builder</em>
+            <em>Protocol Builder</em>
           </span>
         </Link>
         <nav className="header-actions">

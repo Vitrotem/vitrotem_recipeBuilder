@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState, type DragEvent } from "react";
 import { createPortal } from "react-dom";
 import {
-  deleteRecipeImage,
-  fetchRecipeImageBlob,
-  uploadRecipeImage,
+  deleteProtocolImage,
+  fetchProtocolImageBlob,
+  uploadProtocolImage,
 } from "@/lib/api";
 import {
   ACCEPTED_IMAGE_TYPES,
@@ -14,7 +14,7 @@ import {
   validateImageFile,
   type PendingImage,
 } from "@/lib/imageUpload";
-import type { Recipe, RecipeImage } from "@/lib/types";
+import type { Protocol, ProtocolImage } from "@/lib/types";
 
 const IMAGE_KINDS = [
   { value: "micrograph", label: "Micrograph" },
@@ -26,23 +26,23 @@ const IMAGE_KINDS = [
 const ACCEPT = ACCEPTED_IMAGE_TYPES.join(",");
 
 type Props = {
-  recipeId?: string;
-  images?: RecipeImage[];
-  onChange?: (recipe: Recipe) => void;
+  protocolId?: string;
+  images?: ProtocolImage[];
+  onChange?: (protocol: Protocol) => void;
   pending?: PendingImage[];
   onPendingChange?: (pending: PendingImage[]) => void;
   readOnly?: boolean;
 };
 
-export default function RecipeImages({
-  recipeId,
+export default function ProtocolImages({
+  protocolId,
   images = [],
   onChange,
   pending = [],
   onPendingChange,
   readOnly = false,
 }: Props) {
-  const isPendingMode = Boolean(onPendingChange) && !recipeId;
+  const isPendingMode = Boolean(onPendingChange) && !protocolId;
   const [caption, setCaption] = useState("");
   const [kind, setKind] = useState("micrograph");
   const [uploading, setUploading] = useState(false);
@@ -65,14 +65,14 @@ export default function RecipeImages({
     : null;
 
   useEffect(() => {
-    if (isPendingMode || !recipeId) return;
+    if (isPendingMode || !protocolId) return;
     let cancelled = false;
 
     async function loadPreviews() {
       const next: Record<string, string> = {};
       for (const img of images) {
         try {
-          const blob = await fetchRecipeImageBlob(recipeId!, img.id);
+          const blob = await fetchProtocolImageBlob(protocolId!, img.id);
           if (cancelled) return;
           const url = URL.createObjectURL(blob);
           objectUrls.current.push(url);
@@ -94,7 +94,7 @@ export default function RecipeImages({
       objectUrls.current.forEach((u) => URL.revokeObjectURL(u));
       objectUrls.current = [];
     };
-  }, [recipeId, imageKey, isPendingMode]);
+  }, [protocolId, imageKey, isPendingMode]);
 
   useEffect(() => {
     if (!lightboxId) return;
@@ -137,13 +137,13 @@ export default function RecipeImages({
       return;
     }
 
-    if (!recipeId || !onChange) return;
+    if (!protocolId || !onChange) return;
 
     setUploading(true);
     try {
-      let updated: Recipe | null = null;
+      let updated: Protocol | null = null;
       for (const file of valid) {
-        updated = await uploadRecipeImage(recipeId, file, opts);
+        updated = await uploadProtocolImage(protocolId, file, opts);
       }
       setCaption("");
       if (updated) onChange(updated);
@@ -197,11 +197,11 @@ export default function RecipeImages({
       return;
     }
 
-    if (!recipeId || !onChange) return;
+    if (!protocolId || !onChange) return;
 
     try {
       if (lightboxId === imageId) setLightboxId(null);
-      const updated = await deleteRecipeImage(recipeId, imageId);
+      const updated = await deleteProtocolImage(protocolId, imageId);
       onChange(updated);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Delete failed");
@@ -211,7 +211,7 @@ export default function RecipeImages({
   const empty = isPendingMode ? pending.length === 0 : images.length === 0;
 
   return (
-    <section className="form-section recipe-images">
+    <section className="form-section protocol-images">
       <h2>Images</h2>
       {!readOnly && (
         <p className="images-hint">
@@ -376,8 +376,8 @@ export default function RecipeImages({
                     ? (lightboxImage as PendingImage | null)?.caption ||
                       (lightboxImage as PendingImage | null)?.file.name ||
                       "Preview"
-                    : (lightboxImage as RecipeImage | null)?.caption ||
-                      (lightboxImage as RecipeImage | null)?.filename ||
+                    : (lightboxImage as ProtocolImage | null)?.caption ||
+                      (lightboxImage as ProtocolImage | null)?.filename ||
                       "Preview"
                 }
               />

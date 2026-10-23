@@ -14,21 +14,21 @@ from app.crypto import (
     CONTENT_FIELDS,
     decrypt_bytes,
     encrypt_bytes,
-    recipe_from_storage,
-    recipe_to_storage,
+    protocol_from_storage,
+    protocol_to_storage,
 )
 from app.database import get_db
 from app.models import (
     EntryTypeUpdate,
-    RecipeCreate,
-    RecipeImage,
-    RecipeOut,
-    RecipeUpdate,
+    ProtocolCreate,
+    ProtocolImage,
+    ProtocolOut,
+    ProtocolUpdate,
     Visibility,
 )
 from app.storage import get_fs
 
-router = APIRouter(prefix="/recipes", tags=["recipes"])
+router = APIRouter(prefix="/protocols", tags=["protocols"])
 
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
@@ -41,11 +41,11 @@ def _parse_oid(value: str, label: str = "Resource") -> ObjectId:
         raise HTTPException(status_code=404, detail=f"{label} not found") from exc
 
 
-def _serialize_images(raw: list[dict[str, Any]] | None) -> list[RecipeImage]:
-    images: list[RecipeImage] = []
+def _serialize_images(raw: list[dict[str, Any]] | None) -> list[ProtocolImage]:
+    images: list[ProtocolImage] = []
     for item in raw or []:
         images.append(
-            RecipeImage(
+            ProtocolImage(
                 id=str(item.get("id") or item.get("_id") or ""),
                 filename=item.get("filename") or "image",
                 content_type=item.get("content_type") or "application/octet-stream",
@@ -58,15 +58,15 @@ def _serialize_images(raw: list[dict[str, Any]] | None) -> list[RecipeImage]:
     return images
 
 
-def _serialize(doc: dict[str, Any]) -> RecipeOut:
-    plain = recipe_from_storage(doc)
+def _serialize(doc: dict[str, Any]) -> ProtocolOut:
+    plain = protocol_from_storage(doc)
     visibility = plain.get("visibility") or "global"
     owner_id = plain.get("owner_id")
     org_id = plain.get("organization_id")
-    return RecipeOut(
+    return ProtocolOut(
         id=str(plain["_id"]),
         name=plain["name"],
-        entry_type=plain.get("entry_type") or "recipe",
+        entry_type=plain.get("entry_type") or "protocol",
         modality=plain.get("modality", "cryo"),
         author=plain.get("author"),
         tags=plain.get("tags") or [],
@@ -110,7 +110,7 @@ def _user_can_mutate(doc: dict[str, Any], user: dict[str, Any]) -> bool:
 
 def _require_access(doc: dict[str, Any] | None, user: dict[str, Any]) -> dict[str, Any]:
     if not doc:
-        raise HTTPException(status_code=404, detail="Recipe not found")
+        raise HTTPException(status_code=404, detail="Protocol not found")
     if not _user_can_access(doc, user):
         raise HTTPException(status_code=403, detail="Not allowed to access this entry")
     return doc
@@ -181,7 +181,7 @@ async def _validate_visibility(
     return None
 
 
-def _recipe_payload(body: RecipeCreate | RecipeUpdate) -> dict[str, Any]:
+def _protocol_payload(body: ProtocolCreate | ProtocolUpdate) -> dict[str, Any]:
     return body.model_dump(mode="json")
 
 
@@ -194,8 +194,8 @@ async def _delete_gridfs_files(file_ids: list[str]) -> None:
             continue
 
 
-@router.get("", response_model=list[RecipeOut])
-async def list_recipes(
+@router.get("", response_model=list[ProtocolOut])
+async def list_protocols(
     q: str | None = Query(None),
     modality: str | None = Query(None),
     tag: str | None = Query(None),
@@ -203,7 +203,7 @@ async def list_recipes(
     scope: str | None = Query(None, pattern="^(personal|organization|global)$"),
     organization_id: str | None = Query(None),
     user: dict = Depends(get_current_user),
-) -> list[RecipeOut]:
+) -> list[ProtocolOut]:
     db = get_db()
     filters: dict[str, Any] = dict(_acl_filter(user, scope, organization_id))
 
@@ -214,9 +214,15 @@ async def list_recipes(
         and_clauses.append({"tags": tag})
     if entry_type == "log":
         and_clauses.append({"entry_type": "log"})
-    elif entry_type == "recipe":
+    elif entry_type == "protocol":
         and_clauses.append(
-            {"$or": [{"entry_type": "recipe"}, {"entry_type": {"$exists": False}}]}
+            {
+                "$or": [
+                    {"entry_type": "protocol"},
+                    {"entry_type": "recipe"},  # legacy
+                    {"entry_type": {"$exists": False}},
+                ]
+            }
         )
     if q:
         and_clauses.append(
@@ -236,66 +242,66 @@ async def list_recipes(
         else:
             filters = {"$and": [filters, *and_clauses]} if filters else {"$and": and_clauses}
 
-    cursor = db.recipes.find(filters).sort("updated_at", -1)
+    cursor = db.protocols.find(filters).sort("updated_at", -1)
     return [_serialize(doc) async for doc in cursor]
 
 
-@router.post("", response_model=RecipeOut, status_code=status.HTTP_201_CREATED)
-async def create_recipe(
-    body: RecipeCreate,
+@router.post("", response_model=ProtocolOut, status_code=status.HTTP_201_CREATED)
+async def create_protocol(
+    body: ProtocolCreate,
     user: dict = Depends(get_current_user),
-) -> RecipeOut:
+) -> ProtocolOut:
     db = get_db()
     org_oid = await _validate_visibility(body.visibility, body.organization_id, user)
     now = datetime.now(timezone.utc)
-    payload = _recipe_payload(body)
+    payload = _protocol_payload(body)
     payload["visibility"] = body.visibility.value
     payload["organization_id"] = org_oid
     payload["owner_id"] = ObjectId(user["id"])
-    doc = recipe_to_storage(payload)
+    doc = protocol_to_storage(payload)
     doc["images"] = []
     doc["created_at"] = now
     doc["updated_at"] = now
-    result = await db.recipes.insert_one(doc)
-    saved = await db.recipes.find_one({"_id": result.inserted_id})
+    result = await db.protocols.insert_one(doc)
+    saved = await db.protocols.find_one({"_id": result.inserted_id})
     assert saved is not None
     return _serialize(saved)
 
 
-@router.get("/{recipe_id}", response_model=RecipeOut)
-async def get_recipe(
-    recipe_id: str,
+@router.get("/{protocol_id}", response_model=ProtocolOut)
+async def get_protocol(
+    protocol_id: str,
     user: dict = Depends(get_current_user),
-) -> RecipeOut:
+) -> ProtocolOut:
     db = get_db()
-    oid = _parse_oid(recipe_id, "Recipe")
-    doc = await db.recipes.find_one({"_id": oid})
+    oid = _parse_oid(protocol_id, "Protocol")
+    doc = await db.protocols.find_one({"_id": oid})
     return _serialize(_require_access(doc, user))
 
 
-@router.put("/{recipe_id}", response_model=RecipeOut)
-async def update_recipe(
-    recipe_id: str,
-    body: RecipeUpdate,
+@router.put("/{protocol_id}", response_model=ProtocolOut)
+async def update_protocol(
+    protocol_id: str,
+    body: ProtocolUpdate,
     user: dict = Depends(get_current_user),
-) -> RecipeOut:
+) -> ProtocolOut:
     db = get_db()
-    oid = _parse_oid(recipe_id, "Recipe")
-    existing = await db.recipes.find_one({"_id": oid})
+    oid = _parse_oid(protocol_id, "Protocol")
+    existing = await db.protocols.find_one({"_id": oid})
     _require_mutate(existing, user)
 
     org_oid = await _validate_visibility(body.visibility, body.organization_id, user)
-    payload = _recipe_payload(body)
+    payload = _protocol_payload(body)
     payload["visibility"] = body.visibility.value
     payload["organization_id"] = org_oid
     # Preserve original owner
     payload["owner_id"] = existing.get("owner_id") or ObjectId(user["id"])
-    update = recipe_to_storage(payload)
+    update = protocol_to_storage(payload)
     update["updated_at"] = datetime.now(timezone.utc)
     # Never overwrite images via PUT
     update.pop("images", None)
 
-    result = await db.recipes.find_one_and_update(
+    result = await db.protocols.find_one_and_update(
         {"_id": oid},
         {
             "$set": update,
@@ -305,21 +311,21 @@ async def update_recipe(
         return_document=ReturnDocument.AFTER,
     )
     if not result:
-        raise HTTPException(status_code=404, detail="Recipe not found")
+        raise HTTPException(status_code=404, detail="Protocol not found")
     return _serialize(result)
 
 
-@router.patch("/{recipe_id}/entry-type", response_model=RecipeOut)
+@router.patch("/{protocol_id}/entry-type", response_model=ProtocolOut)
 async def set_entry_type(
-    recipe_id: str,
+    protocol_id: str,
     body: EntryTypeUpdate,
     user: dict = Depends(get_current_user),
-) -> RecipeOut:
+) -> ProtocolOut:
     db = get_db()
-    oid = _parse_oid(recipe_id, "Recipe")
-    existing = await db.recipes.find_one({"_id": oid})
+    oid = _parse_oid(protocol_id, "Protocol")
+    existing = await db.protocols.find_one({"_id": oid})
     _require_mutate(existing, user)
-    result = await db.recipes.find_one_and_update(
+    result = await db.protocols.find_one_and_update(
         {"_id": oid},
         {
             "$set": {
@@ -330,35 +336,35 @@ async def set_entry_type(
         return_document=ReturnDocument.AFTER,
     )
     if not result:
-        raise HTTPException(status_code=404, detail="Recipe not found")
+        raise HTTPException(status_code=404, detail="Protocol not found")
     return _serialize(result)
 
 
-@router.delete("/{recipe_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_recipe(
-    recipe_id: str,
+@router.delete("/{protocol_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_protocol(
+    protocol_id: str,
     user: dict = Depends(get_current_user),
 ) -> None:
     db = get_db()
-    oid = _parse_oid(recipe_id, "Recipe")
-    doc = await db.recipes.find_one({"_id": oid})
+    oid = _parse_oid(protocol_id, "Protocol")
+    doc = await db.protocols.find_one({"_id": oid})
     _require_mutate(doc, user)
     image_ids = [str(img.get("id")) for img in (doc.get("images") or []) if img.get("id")]
     await _delete_gridfs_files(image_ids)
-    await db.recipes.delete_one({"_id": oid})
+    await db.protocols.delete_one({"_id": oid})
 
 
-@router.post("/{recipe_id}/images", response_model=RecipeOut, status_code=status.HTTP_201_CREATED)
-async def upload_recipe_image(
-    recipe_id: str,
+@router.post("/{protocol_id}/images", response_model=ProtocolOut, status_code=status.HTTP_201_CREATED)
+async def upload_protocol_image(
+    protocol_id: str,
     file: UploadFile = File(...),
     caption: str | None = Form(None),
     kind: str | None = Form(None),
     user: dict = Depends(get_current_user),
-) -> RecipeOut:
+) -> ProtocolOut:
     db = get_db()
-    oid = _parse_oid(recipe_id, "Recipe")
-    doc = await db.recipes.find_one({"_id": oid})
+    oid = _parse_oid(protocol_id, "Protocol")
+    doc = await db.protocols.find_one({"_id": oid})
     _require_mutate(doc, user)
 
     content_type = (file.content_type or "").lower()
@@ -381,7 +387,7 @@ async def upload_recipe_image(
         filename,
         io.BytesIO(encrypted),
         metadata={
-            "recipe_id": recipe_id,
+            "protocol_id": protocol_id,
             "content_type": content_type,
             "caption": caption,
             "kind": kind,
@@ -400,7 +406,7 @@ async def upload_recipe_image(
         "created_at": now,
     }
 
-    updated = await db.recipes.find_one_and_update(
+    updated = await db.protocols.find_one_and_update(
         {"_id": oid},
         {
             "$push": {"images": image_meta},
@@ -412,17 +418,17 @@ async def upload_recipe_image(
     return _serialize(updated)
 
 
-@router.get("/{recipe_id}/images/{image_id}")
-async def get_recipe_image(
-    recipe_id: str,
+@router.get("/{protocol_id}/images/{image_id}")
+async def get_protocol_image(
+    protocol_id: str,
     image_id: str,
     user: dict = Depends(get_current_user),
 ) -> Response:
     db = get_db()
-    oid = _parse_oid(recipe_id, "Recipe")
+    oid = _parse_oid(protocol_id, "Protocol")
     img_oid = _parse_oid(image_id, "Image")
 
-    doc = await db.recipes.find_one({"_id": oid})
+    doc = await db.protocols.find_one({"_id": oid})
     _require_access(doc, user)
 
     meta = next((img for img in (doc.get("images") or []) if str(img.get("id")) == image_id), None)
@@ -447,15 +453,15 @@ async def get_recipe_image(
     )
 
 
-@router.delete("/{recipe_id}/images/{image_id}", response_model=RecipeOut)
-async def delete_recipe_image(
-    recipe_id: str,
+@router.delete("/{protocol_id}/images/{image_id}", response_model=ProtocolOut)
+async def delete_protocol_image(
+    protocol_id: str,
     image_id: str,
     user: dict = Depends(get_current_user),
-) -> RecipeOut:
+) -> ProtocolOut:
     db = get_db()
-    oid = _parse_oid(recipe_id, "Recipe")
-    doc = await db.recipes.find_one({"_id": oid})
+    oid = _parse_oid(protocol_id, "Protocol")
+    doc = await db.protocols.find_one({"_id": oid})
     _require_mutate(doc, user)
 
     meta = next((img for img in (doc.get("images") or []) if str(img.get("id")) == image_id), None)
@@ -463,7 +469,7 @@ async def delete_recipe_image(
         raise HTTPException(status_code=404, detail="Image not found")
 
     await _delete_gridfs_files([image_id])
-    updated = await db.recipes.find_one_and_update(
+    updated = await db.protocols.find_one_and_update(
         {"_id": oid},
         {
             "$pull": {"images": {"id": image_id}},

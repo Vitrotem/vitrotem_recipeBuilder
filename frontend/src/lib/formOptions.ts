@@ -1,4 +1,4 @@
-/** Common cryo-EM / graphene liquid-cell lab values for recipe form dropdowns. */
+/** Common cryo-EM / graphene liquid-cell lab values for protocol form dropdowns. */
 
 export const PLASMA_MODELS = [
   "VitroTEM / NAIAD integrated",

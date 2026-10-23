@@ -6,6 +6,12 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  async redirects() {
+    return [
+      { source: "/recipes", destination: "/protocols", permanent: true },
+      { source: "/recipes/:path*", destination: "/protocols/:path*", permanent: true },
+    ];
+  },
   async rewrites() {
     return [
       {
