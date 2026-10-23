@@ -1,11 +1,19 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import AppShell from "@/components/AppShell";
+import OrgIcon from "@/components/OrgIcon";
 import PageLoading, { useLoadingMessage } from "@/components/PageLoading";
 import { useUser } from "@/components/UserContext";
-import { createInvite, createOrganization, listOrganizationMembers } from "@/lib/api";
+import {
+  createInvite,
+  createOrganization,
+  deleteOrganizationIcon,
+  listOrganizationMembers,
+  uploadOrganizationIcon,
+} from "@/lib/api";
+import { resizeImageToSquare } from "@/lib/resizeImage";
 
 type Member = { id: string; username: string };
 
@@ -33,6 +41,7 @@ function AccountInner() {
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [membersByOrg, setMembersByOrg] = useState<Record<string, Member[]>>({});
   const [membersLoading, setMembersLoading] = useState(false);
+  const iconInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const loadMembers = useCallback(async () => {
     const orgs = user?.organizations ?? [];
@@ -96,6 +105,39 @@ function AccountInner() {
     }
   }
 
+  async function onUploadIcon(orgId: string, file: File | null) {
+    if (!file) return;
+    setError(null);
+    setMessage(null);
+    setBusy(true);
+    try {
+      const resized = await resizeImageToSquare(file, 100);
+      await uploadOrganizationIcon(orgId, resized);
+      setMessage("Organization icon updated.");
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload icon");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onRemoveIcon(orgId: string) {
+    if (!confirm("Remove this organization icon?")) return;
+    setError(null);
+    setMessage(null);
+    setBusy(true);
+    try {
+      await deleteOrganizationIcon(orgId);
+      setMessage("Organization icon removed.");
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to remove icon");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function copyInvite() {
     if (!inviteLink) return;
     try {
@@ -126,6 +168,7 @@ function AccountInner() {
             <h2>Organizations</h2>
             <p className="field-hint">
               Names are unique (case-insensitive) and may only contain letters, digits, and hyphens.
+              Icons are resized to 100×100 before upload.
             </p>
 
             {error && <div className="alert">{error}</div>}
@@ -148,15 +191,56 @@ function AccountInner() {
                   return (
                     <li key={org.id} className="org-card">
                       <div className="org-row">
-                        <span className="org-name">{org.name}</span>
-                        <button
-                          type="button"
-                          className="btn btn-ghost"
-                          disabled={busy}
-                          onClick={() => onInvite(org.id)}
-                        >
-                          Create invite link
-                        </button>
+                        <span className="org-name">
+                          <OrgIcon
+                            orgId={org.id}
+                            iconId={org.icon_id}
+                            name={org.name}
+                            size={40}
+                            className="org-icon-lg"
+                          />
+                          {org.name}
+                        </span>
+                        <div className="org-icon-actions">
+                          <input
+                            ref={(el) => {
+                              iconInputRefs.current[org.id] = el;
+                            }}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0] ?? null;
+                              e.target.value = "";
+                              void onUploadIcon(org.id, file);
+                            }}
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-ghost"
+                            disabled={busy}
+                            onClick={() => iconInputRefs.current[org.id]?.click()}
+                          >
+                            {org.icon_id ? "Change icon" : "Upload icon"}
+                          </button>
+                          {org.icon_id ? (
+                            <button
+                              type="button"
+                              className="btn btn-ghost"
+                              disabled={busy}
+                              onClick={() => void onRemoveIcon(org.id)}
+                            >
+                              Remove icon
+                            </button>
+                          ) : null}
+                          <button
+                            type="button"
+                            className="btn btn-ghost"
+                            disabled={busy}
+                            onClick={() => onInvite(org.id)}
+                          >
+                            Create invite link
+                          </button>
+                        </div>
                       </div>
                       <div className="org-members">
                         <p className="org-members-label">Members</p>

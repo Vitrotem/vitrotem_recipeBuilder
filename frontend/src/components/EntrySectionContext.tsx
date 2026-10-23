@@ -32,7 +32,7 @@ type EntrySectionContextValue = {
 const EntrySectionContext = createContext<EntrySectionContextValue | null>(null);
 
 export function EntrySectionProvider({ children }: { children: ReactNode }) {
-  const [section, setSectionState] = useState<BrowseSection>("recipe");
+  const [section, setSectionState] = useState<BrowseSection>("protocol");
   const [organizationId, setOrganizationIdState] = useState<string | null>(null);
 
   useEffect(() => {

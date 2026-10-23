@@ -262,6 +262,42 @@ textarea {
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 11rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.section-nav-label > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.org-icon {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 4px;
+  object-fit: cover;
+  display: block;
+}
+
+.org-icon-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ice);
+  border: 1px solid var(--border);
+  color: var(--navy);
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.org-icon-lg {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 6px;
+  font-size: 1rem;
 }
 
 .section-nav-group + .section-nav-group {
@@ -528,8 +564,8 @@ label textarea:focus {
   transform: translateY(-1px);
 }
 
-/* ── Recipe list ── */
-.recipe-list {
+/* ── protocol list ── */
+.protocol-list {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -538,35 +574,35 @@ label textarea:focus {
   gap: 0.65rem;
 }
 
-.recipe-list > li {
+.protocol-list > li {
   animation: row-in 0.45s var(--ease-out) both;
 }
 
-.recipe-list > li:nth-child(1) {
+.protocol-list > li:nth-child(1) {
   animation-delay: 0.05s;
 }
-.recipe-list > li:nth-child(2) {
+.protocol-list > li:nth-child(2) {
   animation-delay: 0.1s;
 }
-.recipe-list > li:nth-child(3) {
+.protocol-list > li:nth-child(3) {
   animation-delay: 0.15s;
 }
-.recipe-list > li:nth-child(4) {
+.protocol-list > li:nth-child(4) {
   animation-delay: 0.2s;
 }
-.recipe-list > li:nth-child(5) {
+.protocol-list > li:nth-child(5) {
   animation-delay: 0.25s;
 }
-.recipe-list > li:nth-child(6) {
+.protocol-list > li:nth-child(6) {
   animation-delay: 0.3s;
 }
-.recipe-list > li:nth-child(7) {
+.protocol-list > li:nth-child(7) {
   animation-delay: 0.35s;
 }
-.recipe-list > li:nth-child(8) {
+.protocol-list > li:nth-child(8) {
   animation-delay: 0.4s;
 }
-.recipe-list > li:nth-child(n + 9) {
+.protocol-list > li:nth-child(n + 9) {
   animation-delay: 0.45s;
 }
 
@@ -581,7 +617,7 @@ label textarea:focus {
   }
 }
 
-.recipe-row {
+.protocol-row {
   display: block;
   padding: 1rem 1.15rem;
   background: var(--bg-elevated);
@@ -597,7 +633,7 @@ label textarea:focus {
     box-shadow 0.35s var(--ease-out);
 }
 
-.recipe-row::before {
+.protocol-row::before {
   content: "";
   position: absolute;
   left: 0;
@@ -610,19 +646,19 @@ label textarea:focus {
   transition: transform 0.35s var(--ease-out);
 }
 
-.recipe-row:hover {
+.protocol-row:hover {
   border-color: var(--blue);
   color: inherit;
   transform: translateY(-3px) translateX(2px);
   box-shadow: var(--shadow-lg), 0 0 0 1px rgba(30, 111, 217, 0.08);
 }
 
-.recipe-row:hover::before {
+.protocol-row:hover::before {
   transform: scaleY(1);
   transform-origin: top;
 }
 
-.recipe-row h3 {
+.protocol-row h3 {
   margin: 0 0 0.35rem;
   font-family: var(--font-display);
   font-size: 1.1rem;
@@ -630,11 +666,11 @@ label textarea:focus {
   transition: color 0.25s var(--ease-out);
 }
 
-.recipe-row:hover h3 {
+.protocol-row:hover h3 {
   color: var(--blue);
 }
 
-.recipe-meta {
+.protocol-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem 0.85rem;
@@ -655,7 +691,7 @@ label textarea:focus {
   transition: transform 0.25s var(--ease-spring), background 0.2s;
 }
 
-.recipe-row:hover .badge {
+.protocol-row:hover .badge {
   transform: scale(1.05);
 }
 
@@ -912,6 +948,20 @@ label textarea:focus {
 .org-name {
   font-weight: 600;
   color: var(--navy);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.org-icon-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.org-icon-actions input[type="file"] {
+  display: none;
 }
 
 .org-members {
@@ -995,8 +1045,8 @@ label textarea:focus {
   font-size: 0.8rem;
 }
 
-/* ── Recipe form ── */
-.recipe-form {
+/* ── protocol form ── */
+.protocol-form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -1225,7 +1275,7 @@ label .other-input {
   }
 }
 
-.recipe-images {
+.protocol-images {
   margin-bottom: 1rem;
 }
 
@@ -1447,7 +1497,7 @@ label .other-input {
   align-self: stretch;
 }
 
-.recipe-page-header {
+.protocol-page-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -1455,26 +1505,26 @@ label .other-input {
   margin-bottom: 0.5rem;
 }
 
-.recipe-page-header .page-title {
+.protocol-page-header .page-title {
   color: var(--blue);
 }
 
-.recipe-page-header .page-sub {
+.protocol-page-header .page-sub {
   margin-bottom: 0;
 }
 
-.recipe-page-actions {
+.protocol-page-actions {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   flex-shrink: 0;
 }
 
-.recipe-menu {
+.protocol-menu {
   position: relative;
 }
 
-.recipe-menu-trigger {
+.protocol-menu-trigger {
   width: 2.25rem;
   height: 2.25rem;
   border: 1.5px solid var(--border);
@@ -1488,12 +1538,12 @@ label .other-input {
   place-items: center;
 }
 
-.recipe-menu-trigger:hover {
+.protocol-menu-trigger:hover {
   border-color: var(--accent);
   color: var(--accent);
 }
 
-.recipe-menu-dropdown {
+.protocol-menu-dropdown {
   position: absolute;
   right: 0;
   top: calc(100% + 0.35rem);
@@ -1509,7 +1559,7 @@ label .other-input {
   gap: 0.15rem;
 }
 
-.recipe-menu-dropdown button {
+.protocol-menu-dropdown button {
   border: none;
   background: transparent;
   text-align: left;
@@ -1520,30 +1570,30 @@ label .other-input {
   font: inherit;
 }
 
-.recipe-menu-dropdown button:hover {
+.protocol-menu-dropdown button:hover {
   background: var(--accent-dim);
 }
 
-.recipe-menu-dropdown button.danger {
+.protocol-menu-dropdown button.danger {
   color: var(--danger);
 }
 
-.recipe-menu-dropdown button.danger:hover {
+.protocol-menu-dropdown button.danger:hover {
   background: rgba(196, 92, 92, 0.12);
 }
 
-.recipe-view {
+.protocol-view {
   font-family: var(--font-sans);
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
-.recipe-view .view-section {
+.protocol-view .view-section {
   margin: 0;
 }
 
-.recipe-view .view-section h2 {
+.protocol-view .view-section h2 {
   font-family: var(--font-sans);
   margin: 0 0 0.75rem;
   font-size: 1.05rem;
@@ -1556,7 +1606,7 @@ label .other-input {
   gap: 0.5rem;
 }
 
-.recipe-view .view-section h2::before {
+.protocol-view .view-section h2::before {
   content: "";
   width: 8px;
   height: 8px;
@@ -1576,7 +1626,7 @@ label .other-input {
     grid-template-columns: 1fr;
   }
 
-  .recipe-page-header {
+  .protocol-page-header {
     flex-direction: column;
   }
 }

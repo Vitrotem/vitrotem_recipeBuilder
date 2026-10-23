@@ -2,7 +2,12 @@
 
 import { useState, type ReactNode } from "react";
 import { useUser } from "@/components/UserContext";
-import type { RecipeInput, Visibility } from "@/lib/types";
+import {
+  GRID_COUNT,
+  normalizeBlotTimes,
+  type ProtocolInput,
+  type Visibility,
+} from "@/lib/types";
 import SelectOrOther from "./SelectOrOther";
 import SelectOrOtherNumber from "./SelectOrOtherNumber";
 import {
@@ -34,17 +39,23 @@ import {
 } from "@/lib/formOptions";
 
 type Props = {
-  initial: RecipeInput;
+  initial: ProtocolInput;
   submitLabel: string;
-  onSubmit: (data: RecipeInput) => Promise<void>;
+  onSubmit: (data: ProtocolInput) => Promise<void>;
   onDelete?: () => Promise<void>;
   children?: ReactNode;
 };
 
-export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete, children }: Props) {
+export default function ProtocolForm({ initial, submitLabel, onSubmit, onDelete, children }: Props) {
   const { user } = useUser();
   const orgs = user?.organizations ?? [];
-  const [form, setForm] = useState<RecipeInput>(initial);
+  const [form, setForm] = useState<ProtocolInput>(() => ({
+    ...initial,
+    naiad: {
+      ...initial.naiad,
+      blot_times_ms: normalizeBlotTimes(initial.naiad),
+    },
+  }));
   const [tagsText, setTagsText] = useState((initial.tags || []).join(", "));
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -52,7 +63,7 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete, c
 
   function setVisibility(visibility: Visibility) {
     setForm((prev) => {
-      const next: RecipeInput = { ...prev, visibility };
+      const next: ProtocolInput = { ...prev, visibility };
       if (visibility === "organization") {
         next.organization_id =
           prev.organization_id && orgs.some((o) => o.id === prev.organization_id)
@@ -65,7 +76,7 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete, c
     });
   }
 
-  function patch<K extends keyof RecipeInput>(key: K, value: RecipeInput[K]) {
+  function patch<K extends keyof ProtocolInput>(key: K, value: ProtocolInput[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
@@ -88,7 +99,15 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete, c
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean);
-      await onSubmit({ ...form, tags });
+      const { blot_time_ms: _legacy, ...naiadRest } = form.naiad;
+      await onSubmit({
+        ...form,
+        tags,
+        naiad: {
+          ...naiadRest,
+          blot_times_ms: normalizeBlotTimes(form.naiad),
+        },
+      });
       setSavedFlash("Saved");
       window.setTimeout(() => setSavedFlash(null), 2800);
     } catch (err) {
@@ -112,7 +131,7 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete, c
 
   async function handleDelete() {
     if (!onDelete) return;
-    if (!confirm("Delete this recipe?")) return;
+    if (!confirm("Delete this protocol?")) return;
     setSaving(true);
     try {
       await onDelete();
@@ -123,14 +142,14 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete, c
   }
 
   return (
-    <form className="recipe-form" onSubmit={handleSubmit}>
+    <form className="protocol-form" onSubmit={handleSubmit}>
       {error && <div className="alert">{error}</div>}
 
       <section className="form-section">
         <h2>Metadata</h2>
         <div className="grid-2">
           <label>
-            Recipe name
+            Protocol name
             <input
               required
               value={form.name}
@@ -142,7 +161,7 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete, c
             Modality
             <select
               value={form.modality}
-              onChange={(e) => patch("modality", e.target.value as RecipeInput["modality"])}
+              onChange={(e) => patch("modality", e.target.value as ProtocolInput["modality"])}
             >
               <option value="cryo">Cryo-EM</option>
               <option value="rt">Room Temperature TEM</option>
@@ -393,12 +412,25 @@ export default function RecipeForm({ initial, submitLabel, onSubmit, onDelete, c
       <section className="form-section">
         <h2>NAIAD settings</h2>
         <div className="grid-2">
-          <SelectOrOtherNumber
-            label="Blot time (ms)"
-            value={form.naiad.blot_time_ms}
-            options={BLOT_TIMES_MS}
-            onChange={(v) => patchSection("naiad", "blot_time_ms", v)}
-          />
+          {Array.from({ length: GRID_COUNT }, (_, i) => (
+            <SelectOrOtherNumber
+              key={`blot-${i}`}
+              label={`Blot time grid ${i + 1} (ms)`}
+              value={normalizeBlotTimes(form.naiad)[i]}
+              options={BLOT_TIMES_MS}
+              onChange={(v) => {
+                setForm((prev) => {
+                  const next = normalizeBlotTimes(prev.naiad);
+                  next[i] = v;
+                  const { blot_time_ms: _legacy, ...rest } = prev.naiad;
+                  return {
+                    ...prev,
+                    naiad: { ...rest, blot_times_ms: next },
+                  };
+                });
+              }}
+            />
+          ))}
           <SelectOrOtherNumber
             label="RH setpoint (%)"
             value={form.naiad.rh_percent}

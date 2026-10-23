@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import AppHeader from "@/components/AppHeader";
 import { EntrySectionProvider, useEntrySection } from "@/components/EntrySectionContext";
+import OrgIcon from "@/components/OrgIcon";
 import { UserProvider, useUser } from "@/components/UserContext";
 import type { BrowseSection } from "@/lib/types";
 
@@ -63,10 +64,10 @@ function SectionNav() {
         <p className="section-nav-label">Public</p>
         <nav className="section-nav-list">
           <NavItem
-            id="recipe"
-            label="Recipes"
-            active={section === "recipe"}
-            onSelect={() => select("recipe")}
+            id="protocol"
+            label="Protocols"
+            active={section === "protocol"}
+            onSelect={() => select("protocol")}
           />
           <NavItem
             id="log"
@@ -80,14 +81,15 @@ function SectionNav() {
       {orgs.map((org) => (
         <div key={org.id} className="section-nav-group">
           <p className="section-nav-label" title={org.name}>
-            {org.name}
+            <OrgIcon orgId={org.id} iconId={org.icon_id} name={org.name} />
+            <span>{org.name}</span>
           </p>
           <nav className="section-nav-list">
             <NavItem
-              id="organization-recipe"
-              label="Recipes"
-              active={section === "organization-recipe" && organizationId === org.id}
-              onSelect={() => select("organization-recipe", org.id)}
+              id="organization-protocol"
+              label="Protocols"
+              active={section === "organization-protocol" && organizationId === org.id}
+              onSelect={() => select("organization-protocol", org.id)}
             />
             <NavItem
               id="organization-log"
@@ -103,10 +105,10 @@ function SectionNav() {
         <p className="section-nav-label">Private</p>
         <nav className="section-nav-list">
           <NavItem
-            id="personal-recipe"
-            label="Recipes"
-            active={section === "personal-recipe"}
-            onSelect={() => select("personal-recipe")}
+            id="personal-protocol"
+            label="Protocols"
+            active={section === "personal-protocol"}
+            onSelect={() => select("personal-protocol")}
           />
           <NavItem
             id="personal-log"

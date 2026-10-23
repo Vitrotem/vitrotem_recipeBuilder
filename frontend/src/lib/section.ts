@@ -4,24 +4,25 @@ const SECTION_KEY = "vitrotem_entry_section";
 const ORG_KEY = "vitrotem_browse_org";
 
 const VALID: BrowseSection[] = [
-  "recipe",
+  "protocol",
   "log",
-  "personal-recipe",
+  "personal-protocol",
   "personal-log",
-  "organization-recipe",
+  "organization-protocol",
   "organization-log",
 ];
 
-/** Map legacy sidebar keys saved before personal/org recipes+logs split. */
+/** Map legacy sidebar keys saved before personal/org protocols+logs split / Recipe→Protocol rename. */
 function migrateLegacy(value: string | null): BrowseSection {
-  if (value === "personal") return "personal-recipe";
-  if (value === "organization") return "organization-recipe";
+  if (value === "personal" || value === "personal-recipe") return "personal-protocol";
+  if (value === "organization" || value === "organization-recipe") return "organization-protocol";
+  if (value === "recipe") return "protocol";
   if (VALID.includes(value as BrowseSection)) return value as BrowseSection;
-  return "recipe";
+  return "protocol";
 }
 
 export function getEntrySection(): BrowseSection {
-  if (typeof window === "undefined") return "recipe";
+  if (typeof window === "undefined") return "protocol";
   return migrateLegacy(localStorage.getItem(SECTION_KEY));
 }
 

@@ -7,39 +7,39 @@ import AppShell from "@/components/AppShell";
 import { useEntrySection } from "@/components/EntrySectionContext";
 import PageLoading from "@/components/PageLoading";
 import { useUser } from "@/components/UserContext";
-import RecipeForm from "@/components/RecipeForm";
-import RecipeImages from "@/components/RecipeImages";
-import { createRecipe, uploadRecipeImage } from "@/lib/api";
+import ProtocolForm from "@/components/ProtocolForm";
+import ProtocolImages from "@/components/ProtocolImages";
+import { createProtocol, uploadProtocolImage } from "@/lib/api";
 import { revokePendingImages, type PendingImage } from "@/lib/imageUpload";
 import {
   browseSectionFromVisibility,
-  emptyRecipe,
+  emptyProtocol,
   entryTypeLabel,
   type EntryType,
-  type RecipeInput,
+  type ProtocolInput,
   type Visibility,
 } from "@/lib/types";
 
-export default function NewRecipePage() {
+export default function NewProtocolPage() {
   return (
     <AuthGuard>
       <AppShell>
         <Suspense fallback={<PageLoading />}>
-          <NewRecipeInner />
+          <NewProtocolInner />
         </Suspense>
       </AppShell>
     </AuthGuard>
   );
 }
 
-function NewRecipeInner() {
+function NewProtocolInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { section, setSection } = useEntrySection();
   const { user, loading: userLoading } = useUser();
   const paramType = searchParams.get("entry_type");
   const entryType: EntryType =
-    paramType === "log" || paramType === "recipe" ? paramType : "recipe";
+    paramType === "log" || paramType === "protocol" ? paramType : "protocol";
   const noun = entryTypeLabel(entryType).toLowerCase();
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const pendingRef = useRef(pendingImages);
@@ -71,7 +71,7 @@ function NewRecipeInner() {
       }
     }
 
-    return emptyRecipe(entryType, { visibility, organization_id });
+    return emptyProtocol(entryType, { visibility, organization_id });
   }, [entryType, searchParams, user]);
 
   useEffect(() => {
@@ -83,12 +83,12 @@ function NewRecipeInner() {
     return () => revokePendingImages(pendingRef.current);
   }, []);
 
-  async function handleSubmit(data: RecipeInput) {
+  async function handleSubmit(data: ProtocolInput) {
     const toUpload = pendingRef.current;
-    const created = await createRecipe({ ...data, entry_type: entryType });
+    const created = await createProtocol({ ...data, entry_type: entryType });
     try {
       for (const img of toUpload) {
-        await uploadRecipeImage(created.id, img.file, {
+        await uploadProtocolImage(created.id, img.file, {
           caption: img.caption || undefined,
           kind: img.kind || undefined,
         });
@@ -97,7 +97,7 @@ function NewRecipeInner() {
       revokePendingImages(toUpload);
       setPendingImages([]);
     }
-    router.push(`/recipes/${created.id}?saved=1`);
+    router.push(`/protocols/${created.id}?saved=1`);
   }
 
   if (userLoading) {
@@ -110,14 +110,14 @@ function NewRecipeInner() {
       <p className="page-sub">
         Capture plasma, NAIAD, sample, grid, graphene, and microscope settings
       </p>
-      <RecipeForm
+      <ProtocolForm
         key={`${entryType}-${initial.visibility}-${initial.organization_id ?? ""}`}
         initial={initial}
         submitLabel={`Create ${noun}`}
         onSubmit={handleSubmit}
       >
-        <RecipeImages pending={pendingImages} onPendingChange={setPendingImages} />
-      </RecipeForm>
+        <ProtocolImages pending={pendingImages} onPendingChange={setPendingImages} />
+      </ProtocolForm>
     </main>
   );
 }
