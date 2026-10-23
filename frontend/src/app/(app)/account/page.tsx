@@ -1,8 +1,6 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import AuthGuard from "@/components/AuthGuard";
-import AppShell from "@/components/AppShell";
 import OrgIcon from "@/components/OrgIcon";
 import PageLoading, { useLoadingMessage } from "@/components/PageLoading";
 import { useUser } from "@/components/UserContext";
@@ -23,13 +21,7 @@ function MembersLoadingHint() {
 }
 
 export default function AccountPage() {
-  return (
-    <AuthGuard>
-      <AppShell>
-        <AccountInner />
-      </AppShell>
-    </AuthGuard>
-  );
+  return <AccountInner />;
 }
 
 function AccountInner() {

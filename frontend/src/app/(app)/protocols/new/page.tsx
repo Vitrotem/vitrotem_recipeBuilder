@@ -2,8 +2,6 @@
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import AuthGuard from "@/components/AuthGuard";
-import AppShell from "@/components/AppShell";
 import { useEntrySection } from "@/components/EntrySectionContext";
 import PageLoading from "@/components/PageLoading";
 import { useUser } from "@/components/UserContext";
@@ -22,13 +20,9 @@ import {
 
 export default function NewProtocolPage() {
   return (
-    <AuthGuard>
-      <AppShell>
-        <Suspense fallback={<PageLoading />}>
-          <NewProtocolInner />
-        </Suspense>
-      </AppShell>
-    </AuthGuard>
+    <Suspense fallback={<PageLoading />}>
+      <NewProtocolInner />
+    </Suspense>
   );
 }
 

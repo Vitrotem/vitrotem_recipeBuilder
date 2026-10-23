@@ -2,8 +2,6 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import AuthGuard from "@/components/AuthGuard";
-import AppShell from "@/components/AppShell";
 import { useEntrySection } from "@/components/EntrySectionContext";
 import PageLoading from "@/components/PageLoading";
 import ProtocolForm from "@/components/ProtocolForm";
@@ -25,13 +23,9 @@ const EMPTY_IMAGES: ProtocolImage[] = [];
 
 export default function ProtocolDetailPage() {
   return (
-    <AuthGuard>
-      <AppShell>
-        <Suspense fallback={<PageLoading />}>
-          <ProtocolDetailInner />
-        </Suspense>
-      </AppShell>
-    </AuthGuard>
+    <Suspense fallback={<PageLoading />}>
+      <ProtocolDetailInner />
+    </Suspense>
   );
 }
 
