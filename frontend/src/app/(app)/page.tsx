@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import AuthGuard from "@/components/AuthGuard";
-import AppShell from "@/components/AppShell";
 import { useEntrySection } from "@/components/EntrySectionContext";
 import PageLoading from "@/components/PageLoading";
 import { useUser } from "@/components/UserContext";
@@ -17,13 +15,7 @@ import {
 } from "@/lib/types";
 
 export default function HomePage() {
-  return (
-    <AuthGuard>
-      <AppShell>
-        <ProtocolList />
-      </AppShell>
-    </AuthGuard>
-  );
+  return <ProtocolList />;
 }
 
 function ProtocolList() {
