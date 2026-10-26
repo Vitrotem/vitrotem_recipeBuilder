@@ -26,6 +26,13 @@ const IMAGE_KINDS = [
 
 const ACCEPT = ACCEPTED_IMAGE_TYPES.join(",");
 
+type Progress = {
+  phase: "converting" | "uploading";
+  current: number;
+  total: number;
+  fileName?: string;
+};
+
 type Props = {
   protocolId?: string;
   images?: ProtocolImage[];
@@ -47,6 +54,7 @@ export default function ProtocolImages({
   const [caption, setCaption] = useState("");
   const [kind, setKind] = useState("micrograph");
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState<Progress | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [previews, setPreviews] = useState<Record<string, string>>({});
@@ -131,9 +139,17 @@ export default function ProtocolImages({
     };
 
     setUploading(true);
+    setProgress({ phase: "converting", current: 0, total: valid.length });
     try {
       const converted: File[] = [];
-      for (const file of valid) {
+      for (let i = 0; i < valid.length; i++) {
+        const file = valid[i]!;
+        setProgress({
+          phase: "converting",
+          current: i + 1,
+          total: valid.length,
+          fileName: file.name,
+        });
         converted.push(await convertImageToWebp(file));
       }
 
@@ -147,7 +163,14 @@ export default function ProtocolImages({
       if (!protocolId || !onChange) return;
 
       let updated: Protocol | null = null;
-      for (const file of converted) {
+      for (let i = 0; i < converted.length; i++) {
+        const file = converted[i]!;
+        setProgress({
+          phase: "uploading",
+          current: i + 1,
+          total: converted.length,
+          fileName: file.name,
+        });
         updated = await uploadProtocolImage(protocolId, file, opts);
       }
       setCaption("");
@@ -156,6 +179,7 @@ export default function ProtocolImages({
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setUploading(false);
+      setProgress(null);
     }
   }
 
@@ -214,6 +238,10 @@ export default function ProtocolImages({
   }
 
   const empty = isPendingMode ? pending.length === 0 : images.length === 0;
+  const progressLabel = progress
+    ? `${progress.phase === "converting" ? "Converting" : "Uploading"} ${progress.current} of ${progress.total}`
+    : null;
+  const progressPct = progress ? Math.round((progress.current / progress.total) * 100) : 0;
 
   return (
     <section className="form-section protocol-images">
@@ -251,6 +279,7 @@ export default function ProtocolImages({
           <label
             className={`image-dropzone${dragActive ? " is-dragging" : ""}${uploading ? " is-disabled" : ""}`}
             aria-label="Upload images by dragging or clicking to browse"
+            aria-busy={uploading || undefined}
             onDragEnterCapture={onDragEnter}
             onDragLeaveCapture={onDragLeave}
             onDragOverCapture={onDragOver}
@@ -270,9 +299,34 @@ export default function ProtocolImages({
               }}
             />
             <span className="image-dropzone-title">
-              {uploading ? "Uploading…" : dragActive ? "Drop to upload" : "Drag images here"}
+              {progressLabel
+                ? progressLabel
+                : dragActive
+                  ? "Drop to upload"
+                  : "Drag images here"}
             </span>
-            <span className="image-dropzone-sub">or click to browse</span>
+            <span className="image-dropzone-sub">
+              {progress?.fileName
+                ? progress.fileName
+                : uploading
+                  ? "Please wait…"
+                  : "or click to browse"}
+            </span>
+            {progress && (
+              <span
+                className="image-dropzone-progress"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={progressPct}
+                aria-label={progressLabel ?? "Progress"}
+              >
+                <span
+                  className="image-dropzone-progress-bar"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </span>
+            )}
           </label>
         </div>
       )}

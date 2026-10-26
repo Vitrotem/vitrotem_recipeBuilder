@@ -1355,6 +1355,30 @@ label .other-input {
 .image-dropzone-sub {
   font-size: 0.85rem;
   pointer-events: none;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 0.5rem;
+}
+
+.image-dropzone-progress {
+  display: block;
+  width: min(16rem, 80%);
+  height: 0.35rem;
+  margin-top: 0.65rem;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.image-dropzone-progress-bar {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--cyan), var(--blue));
+  transition: width 0.2s ease;
 }
 
 .image-grid {
