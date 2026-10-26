@@ -175,7 +175,12 @@ export default function ProtocolView({ protocol }: { protocol: Protocol }) {
                   : null
             }
           />,
-          <Field key="n" label="Note" value={outcome?.note} />,
+          outcome?.note ? (
+            <div key="n" className="view-param view-param-wide">
+              <span className="view-param-label">Note</span>
+              <span className="view-param-value view-param-notes">{outcome.note}</span>
+            </div>
+          ) : null,
         ]}
       />
     </div>
