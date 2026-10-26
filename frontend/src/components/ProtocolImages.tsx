@@ -10,6 +10,7 @@ import {
 import {
   ACCEPTED_IMAGE_TYPES,
   MAX_IMAGE_LABEL,
+  convertImageToWebp,
   createPendingImage,
   validateImageFile,
   type PendingImage,
@@ -129,19 +130,24 @@ export default function ProtocolImages({
       kind: kind || undefined,
     };
 
-    if (isPendingMode && onPendingChange) {
-      const next = valid.map((file) => createPendingImage(file, opts));
-      onPendingChange([...pending, ...next]);
-      setCaption("");
-      return;
-    }
-
-    if (!protocolId || !onChange) return;
-
     setUploading(true);
     try {
-      let updated: Protocol | null = null;
+      const converted: File[] = [];
       for (const file of valid) {
+        converted.push(await convertImageToWebp(file));
+      }
+
+      if (isPendingMode && onPendingChange) {
+        const next = converted.map((file) => createPendingImage(file, opts));
+        onPendingChange([...pending, ...next]);
+        setCaption("");
+        return;
+      }
+
+      if (!protocolId || !onChange) return;
+
+      let updated: Protocol | null = null;
+      for (const file of converted) {
         updated = await uploadProtocolImage(protocolId, file, opts);
       }
       setCaption("");
@@ -214,7 +220,7 @@ export default function ProtocolImages({
       <h2>Images</h2>
       {!readOnly && (
         <p className="images-hint">
-          JPEG, PNG, or WebP — max {MAX_IMAGE_LABEL} each
+          JPEG, PNG, or WebP — converted to WebP on upload, max {MAX_IMAGE_LABEL} each
           {isPendingMode ? ". Uploaded when you save." : "."}
         </p>
       )}

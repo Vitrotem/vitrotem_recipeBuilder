@@ -39,6 +39,40 @@ export function validateImageFile(file: File): string | null {
   return null;
 }
 
+/** Encode an image as WebP before upload (skips re-encode if already WebP). */
+export async function convertImageToWebp(file: File, quality = 0.85): Promise<File> {
+  if ((file.type || "").toLowerCase() === "image/webp") {
+    return file;
+  }
+
+  const bitmap = await createImageBitmap(file);
+  const canvas = document.createElement("canvas");
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    bitmap.close();
+    throw new Error("Could not process image");
+  }
+  ctx.drawImage(bitmap, 0, 0);
+  bitmap.close();
+
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (b) => (b ? resolve(b) : reject(new Error("WebP encoding not supported in this browser"))),
+      "image/webp",
+      quality,
+    );
+  });
+
+  if (blob.size > MAX_IMAGE_BYTES) {
+    throw new Error(`Image must be ${MAX_IMAGE_LABEL} or smaller after conversion`);
+  }
+
+  const base = file.name.replace(/\.[^.]+$/, "") || "image";
+  return new File([blob], `${base}.webp`, { type: "image/webp" });
+}
+
 export function createPendingImage(
   file: File,
   opts: { caption?: string; kind?: string } = {},
