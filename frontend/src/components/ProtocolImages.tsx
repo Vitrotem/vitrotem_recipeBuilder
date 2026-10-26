@@ -52,7 +52,6 @@ export default function ProtocolImages({
   const [lightboxId, setLightboxId] = useState<string | null>(null);
   const objectUrls = useRef<string[]>([]);
   const dragDepth = useRef(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const imageKey = images.map((i) => i.id).join(",");
   const lightboxImage = isPendingMode
@@ -243,28 +242,15 @@ export default function ProtocolImages({
               />
             </label>
           </div>
-          <div
+          <label
             className={`image-dropzone${dragActive ? " is-dragging" : ""}${uploading ? " is-disabled" : ""}`}
-            role="button"
-            tabIndex={uploading ? -1 : 0}
             aria-label="Upload images by dragging or clicking to browse"
-            onClick={() => {
-              if (!uploading) fileInputRef.current?.click();
-            }}
-            onKeyDown={(e) => {
-              if (uploading) return;
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                fileInputRef.current?.click();
-              }
-            }}
-            onDragEnter={onDragEnter}
-            onDragLeave={onDragLeave}
-            onDragOver={onDragOver}
-            onDrop={onDrop}
+            onDragEnterCapture={onDragEnter}
+            onDragLeaveCapture={onDragLeave}
+            onDragOverCapture={onDragOver}
+            onDropCapture={onDrop}
           >
             <input
-              ref={fileInputRef}
               type="file"
               accept={ACCEPT}
               multiple
@@ -280,7 +266,7 @@ export default function ProtocolImages({
               {uploading ? "Uploading…" : dragActive ? "Drop to upload" : "Drag images here"}
             </span>
             <span className="image-dropzone-sub">or click to browse</span>
-          </div>
+          </label>
         </div>
       )}
 
