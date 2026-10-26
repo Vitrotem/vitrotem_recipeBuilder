@@ -39,6 +39,8 @@ type Props = {
   onChange?: (protocol: Protocol) => void;
   pending?: PendingImage[];
   onPendingChange?: (pending: PendingImage[]) => void;
+  rawDataUrl?: string | null;
+  onRawDataUrlChange?: (value: string) => void;
   readOnly?: boolean;
 };
 
@@ -48,6 +50,8 @@ export default function ProtocolImages({
   onChange,
   pending = [],
   onPendingChange,
+  rawDataUrl,
+  onRawDataUrlChange,
   readOnly = false,
 }: Props) {
   const isPendingMode = Boolean(onPendingChange) && !protocolId;
@@ -243,9 +247,33 @@ export default function ProtocolImages({
     : null;
   const progressPct = progress ? Math.round((progress.current / progress.total) * 100) : 0;
 
+  const showRawDataUrl = rawDataUrl !== undefined || Boolean(onRawDataUrlChange);
+  const rawDataUrlValue = rawDataUrl ?? "";
+
   return (
     <section className="form-section protocol-images">
       <h2>Images</h2>
+      {showRawDataUrl && (!readOnly || Boolean(rawDataUrlValue)) && (
+        <label className="images-raw-url">
+          Raw data repository URL
+          {readOnly || !onRawDataUrlChange ? (
+            /^https?:\/\//i.test(rawDataUrlValue) ? (
+              <a href={rawDataUrlValue} target="_blank" rel="noopener noreferrer">
+                {rawDataUrlValue}
+              </a>
+            ) : (
+              <span className="images-raw-url-value">{rawDataUrlValue}</span>
+            )
+          ) : (
+            <input
+              type="text"
+              value={rawDataUrlValue}
+              onChange={(e) => onRawDataUrlChange(e.target.value)}
+              placeholder="Link to the raw image data repository for this entry"
+            />
+          )}
+        </label>
+      )}
       {!readOnly && (
         <p className="images-hint">
           JPEG, PNG, or WebP — converted to WebP on upload, max {MAX_IMAGE_LABEL} each

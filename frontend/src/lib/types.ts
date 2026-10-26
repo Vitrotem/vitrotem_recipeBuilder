@@ -169,6 +169,7 @@ export interface Protocol {
   author?: string | null;
   tags: string[];
   notes?: string | null;
+  image_raw_data_url?: string | null;
   plasma: PlasmaSettings;
   naiad: NaiadSettings;
   sample: SampleSettings;
@@ -211,6 +212,7 @@ export function emptyProtocol(
     author: "",
     tags: [],
     notes: "",
+    image_raw_data_url: "",
     plasma: {},
     naiad: { humidifier_enabled: false, blot_times_ms: emptyBlotTimes() },
     sample: {},

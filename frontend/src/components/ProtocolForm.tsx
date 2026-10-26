@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import {
+  Children,
+  cloneElement,
+  isValidElement,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { useUser } from "@/components/UserContext";
 import {
   GRID_COUNT,
@@ -103,6 +110,7 @@ export default function ProtocolForm({ initial, submitLabel, onSubmit, onDelete,
       await onSubmit({
         ...form,
         tags,
+        image_raw_data_url: form.image_raw_data_url?.trim() || null,
         naiad: {
           ...naiadRest,
           blot_times_ms: normalizeBlotTimes(form.naiad),
@@ -572,7 +580,13 @@ export default function ProtocolForm({ initial, submitLabel, onSubmit, onDelete,
         </label>
       </section>
 
-      {children}
+      {Children.map(children, (child) => {
+        if (!isValidElement(child)) return child;
+        return cloneElement(child as ReactElement<Record<string, unknown>>, {
+          rawDataUrl: form.image_raw_data_url ?? "",
+          onRawDataUrlChange: (value: string) => patch("image_raw_data_url", value),
+        });
+      })}
 
       <div className="form-actions">
         <button type="submit" className="btn btn-primary" disabled={saving}>

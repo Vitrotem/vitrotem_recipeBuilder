@@ -1281,6 +1281,19 @@ label .other-input {
   margin-bottom: 1rem;
 }
 
+.images-raw-url {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0 0 1rem;
+}
+
+.images-raw-url a,
+.images-raw-url-value {
+  word-break: break-all;
+  font-size: 0.95rem;
+}
+
 .images-hint,
 .images-empty,
 .images-status {

@@ -141,6 +141,7 @@ function ProtocolDetailInner() {
     author: protocol.author,
     tags: protocol.tags,
     notes: protocol.notes,
+    image_raw_data_url: protocol.image_raw_data_url ?? "",
     plasma: protocol.plasma || {},
     naiad: protocol.naiad || {},
     sample: protocol.sample || {},
@@ -150,6 +151,13 @@ function ProtocolDetailInner() {
     outcome: protocol.outcome || {},
     visibility: protocol.visibility ?? "global",
     organization_id: protocol.organization_id ?? null,
+  };
+
+  const imagesProps = {
+    protocolId: protocol.id,
+    images: protocol.images ?? EMPTY_IMAGES,
+    onChange: setProtocol,
+    rawDataUrl: protocol.image_raw_data_url ?? "",
   };
 
   return (
@@ -187,17 +195,15 @@ function ProtocolDetailInner() {
           initial={initial}
           submitLabel="Save changes"
           onSubmit={handleSubmit}
-        />
+        >
+          <ProtocolImages {...imagesProps} />
+        </ProtocolForm>
       ) : (
-        <ProtocolView protocol={protocol} />
+        <>
+          <ProtocolView protocol={protocol} />
+          <ProtocolImages {...imagesProps} readOnly />
+        </>
       )}
-
-      <ProtocolImages
-        protocolId={protocol.id}
-        images={protocol.images ?? EMPTY_IMAGES}
-        onChange={setProtocol}
-        readOnly={!editMode}
-      />
     </main>
   );
 }
