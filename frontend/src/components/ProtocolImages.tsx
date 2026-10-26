@@ -48,6 +48,17 @@ export default function ProtocolImages({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
+
+  console.log("[ProtocolImages] render", {
+    protocolId,
+    readOnly,
+    isPendingMode,
+    uploading,
+    imageCount: images.length,
+    pendingCount: pending.length,
+    hasOnChange: Boolean(onChange),
+    hasOnPendingChange: Boolean(onPendingChange),
+  });
   const [previews, setPreviews] = useState<Record<string, string>>({});
   const [lightboxId, setLightboxId] = useState<string | null>(null);
   const objectUrls = useRef<string[]>([]);
@@ -111,18 +122,31 @@ export default function ProtocolImages({
 
   async function handleFiles(fileList: FileList | File[] | null) {
     const files = fileList ? Array.from(fileList) : [];
-    if (!files.length || uploading) return;
+    console.log("[ProtocolImages] handleFiles", {
+      count: files.length,
+      uploading,
+      files: files.map((f) => ({ name: f.name, type: f.type, size: f.size })),
+    });
+    if (!files.length || uploading) {
+      console.log("[ProtocolImages] handleFiles early return", {
+        empty: !files.length,
+        uploading,
+      });
+      return;
+    }
     setError(null);
 
     const valid: File[] = [];
     for (const file of files) {
       const validationError = validateImageFile(file);
       if (validationError) {
+        console.warn("[ProtocolImages] validation failed", file.name, validationError);
         setError(validationError);
         return;
       }
       valid.push(file);
     }
+    console.log("[ProtocolImages] validated", valid.length, "file(s)");
 
     const opts = {
       caption: caption.trim() || undefined,
@@ -131,22 +155,35 @@ export default function ProtocolImages({
 
     if (isPendingMode && onPendingChange) {
       const next = valid.map((file) => createPendingImage(file, opts));
+      console.log("[ProtocolImages] pending mode — adding local previews", next.length);
       onPendingChange([...pending, ...next]);
       setCaption("");
       return;
     }
 
-    if (!protocolId || !onChange) return;
+    if (!protocolId || !onChange) {
+      console.warn("[ProtocolImages] missing protocolId/onChange — abort upload", {
+        protocolId,
+        hasOnChange: Boolean(onChange),
+        isPendingMode,
+      });
+      return;
+    }
 
     setUploading(true);
     try {
       let updated: Protocol | null = null;
       for (const file of valid) {
+        console.log("[ProtocolImages] uploading", file.name, "→", protocolId);
         updated = await uploadProtocolImage(protocolId, file, opts);
+        console.log("[ProtocolImages] upload ok", {
+          imageCount: updated.images?.length,
+        });
       }
       setCaption("");
       if (updated) onChange(updated);
     } catch (err) {
+      console.error("[ProtocolImages] upload error", err);
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setUploading(false);
@@ -157,6 +194,10 @@ export default function ProtocolImages({
     e.preventDefault();
     e.stopPropagation();
     dragDepth.current += 1;
+    console.log("[ProtocolImages] dragEnter", {
+      depth: dragDepth.current,
+      types: [...e.dataTransfer.types],
+    });
     if (e.dataTransfer.types.includes("Files")) setDragActive(true);
   }
 
@@ -181,6 +222,9 @@ export default function ProtocolImages({
     e.stopPropagation();
     dragDepth.current = 0;
     setDragActive(false);
+    console.log("[ProtocolImages] drop", {
+      fileCount: e.dataTransfer.files?.length ?? 0,
+    });
     void handleFiles(e.dataTransfer.files);
   }
 
@@ -256,8 +300,19 @@ export default function ProtocolImages({
               multiple
               disabled={uploading}
               className="image-dropzone-input"
+              onClick={(e) => {
+                console.log("[ProtocolImages] file input click", {
+                  disabled: uploading,
+                  accept: ACCEPT,
+                });
+                e.stopPropagation();
+              }}
               onChange={(e) => {
                 const files = e.target.files;
+                console.log("[ProtocolImages] file input change", {
+                  count: files?.length ?? 0,
+                  names: files ? Array.from(files).map((f) => f.name) : [],
+                });
                 e.target.value = "";
                 void handleFiles(files);
               }}
