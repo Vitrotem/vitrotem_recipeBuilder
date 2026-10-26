@@ -374,7 +374,7 @@ export default function ProtocolImages({
                     {previews[img.id] ? (
                       <img src={previews[img.id]} alt={img.caption || img.filename} />
                     ) : (
-                      <span className="image-loading">Loading…</span>
+                      <span className="image-loading" aria-label="Loading image" />
                     )}
                   </button>
                   <div className="image-meta">
