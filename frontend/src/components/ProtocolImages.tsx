@@ -308,10 +308,11 @@ export default function ProtocolImages({
                 e.stopPropagation();
               }}
               onChange={(e) => {
-                const files = e.target.files;
+                // FileList is live — copy before clearing value or it becomes empty
+                const files = e.target.files ? Array.from(e.target.files) : [];
                 console.log("[ProtocolImages] file input change", {
-                  count: files?.length ?? 0,
-                  names: files ? Array.from(files).map((f) => f.name) : [],
+                  count: files.length,
+                  names: files.map((f) => f.name),
                 });
                 e.target.value = "";
                 void handleFiles(files);
