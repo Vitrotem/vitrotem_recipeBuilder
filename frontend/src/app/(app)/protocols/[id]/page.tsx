@@ -57,8 +57,10 @@ function ProtocolDetailInner() {
 
   useEffect(() => {
     if (!protocol || !user) return;
-    const owns = Boolean(protocol.owner_id && user.id === protocol.owner_id);
-    if (!owns && mode === "edit") setMode("view");
+    const canManage =
+      Boolean(user.is_admin) ||
+      Boolean(protocol.owner_id && user.id === protocol.owner_id);
+    if (!canManage && mode === "edit") setMode("view");
   }, [protocol, user, mode]);
 
   useEffect(() => {
@@ -127,8 +129,10 @@ function ProtocolDetailInner() {
 
   const kind = protocol.entry_type ?? "protocol";
   const noun = entryTypeLabel(kind).toLowerCase();
-  const isOwner = Boolean(user?.id && protocol.owner_id && user.id === protocol.owner_id);
-  const editMode = mode === "edit" && isOwner;
+  const canManage =
+    Boolean(user?.is_admin) ||
+    Boolean(user?.id && protocol.owner_id && user.id === protocol.owner_id);
+  const editMode = mode === "edit" && canManage;
 
   const initial: ProtocolInput = {
     name: protocol.name,
@@ -166,7 +170,7 @@ function ProtocolDetailInner() {
               Cancel
             </button>
           )}
-          {isOwner && (
+          {canManage && (
             <ProtocolMenu
               entryType={kind}
               onEdit={() => setMode("edit")}

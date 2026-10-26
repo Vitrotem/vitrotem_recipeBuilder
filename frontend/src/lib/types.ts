@@ -197,6 +197,7 @@ export interface MeUser {
   id: string;
   username: string;
   organizations: Organization[];
+  is_admin?: boolean;
 }
 
 export function emptyProtocol(
