@@ -1733,6 +1733,198 @@ label .other-input {
   font-size: 1.1rem;
 }
 
+.view-param-notes.markdown-body {
+  white-space: normal;
+}
+
+/* ── Markdown notes editor / renderer ── */
+.markup-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.markup-field > label {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.markup-field textarea {
+  background: var(--ice);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.65rem 0.8rem;
+  font-size: 1.05rem;
+  color: var(--text);
+  font-family: inherit;
+  resize: vertical;
+  transition:
+    border-color 0.25s var(--ease-out),
+    box-shadow 0.25s var(--ease-out),
+    background 0.25s,
+    transform 0.2s;
+}
+
+.markup-field textarea:hover {
+  border-color: var(--border-strong);
+  background: var(--white);
+}
+
+.markup-field textarea:focus {
+  outline: none;
+  border-color: var(--blue);
+  background: var(--white);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.markup-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.markup-btn {
+  appearance: none;
+  border: 1.5px solid var(--border);
+  background: var(--ice);
+  color: var(--text);
+  border-radius: 6px;
+  min-width: 2rem;
+  height: 1.85rem;
+  padding: 0 0.55rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    border-color 0.2s var(--ease-out),
+    background 0.2s,
+    color 0.2s;
+}
+
+.markup-btn:hover {
+  border-color: var(--border-strong);
+  background: var(--white);
+  color: var(--blue);
+}
+
+.markup-btn:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+
+.markup-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  opacity: 0.85;
+}
+
+.markdown-body {
+  line-height: 1.5;
+}
+
+.markdown-body > *:first-child {
+  margin-top: 0;
+}
+
+.markdown-body > *:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body p {
+  margin: 0.4em 0;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  margin: 0.7em 0 0.35em;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text);
+}
+
+.markdown-body h1 {
+  font-size: 1.25em;
+}
+
+.markdown-body h2 {
+  font-size: 1.15em;
+}
+
+.markdown-body h3,
+.markdown-body h4 {
+  font-size: 1.05em;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  margin: 0.4em 0;
+  padding-left: 1.35em;
+}
+
+.markdown-body li {
+  margin: 0.15em 0;
+}
+
+.markdown-body a {
+  color: var(--blue);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.markdown-body a:hover {
+  color: var(--blue-deep);
+}
+
+.markdown-body code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  font-weight: 600;
+  background: var(--ice);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+
+.markdown-body pre {
+  margin: 0.5em 0;
+  padding: 0.65rem 0.8rem;
+  overflow-x: auto;
+  background: var(--ice);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.markdown-body pre code {
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.markdown-body blockquote {
+  margin: 0.5em 0;
+  padding: 0.15em 0 0.15em 0.85em;
+  border-left: 3px solid var(--cyan);
+  color: var(--text-muted);
+}
+
+.markdown-body strong {
+  font-weight: 700;
+}
+
+.markdown-body em {
+  font-style: italic;
+}
+
+.markdown-body hr {
+  border: none;
+  border-top: 1.5px solid var(--border);
+  margin: 0.85em 0;
+}
+
 .toast {
   padding: 0.55rem 0.9rem;
   border-radius: var(--radius);

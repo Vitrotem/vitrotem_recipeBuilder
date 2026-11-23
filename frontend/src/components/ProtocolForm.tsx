@@ -15,6 +15,7 @@ import {
   type ProtocolInput,
   type Visibility,
 } from "@/lib/types";
+import MarkupField from "./MarkupField";
 import SelectOrOther from "./SelectOrOther";
 import SelectOrOtherNumber from "./SelectOrOtherNumber";
 import {
@@ -215,14 +216,13 @@ export default function ProtocolForm({ initial, submitLabel, onSubmit, onDelete,
             </label>
           )}
         </div>
-        <label>
-          Notes
-          <textarea
-            rows={3}
-            value={form.notes || ""}
-            onChange={(e) => patch("notes", e.target.value)}
-          />
-        </label>
+        <MarkupField
+          label="Notes"
+          rows={4}
+          value={form.notes || ""}
+          onChange={(v) => patch("notes", v)}
+          placeholder="Observations, context, follow-ups…"
+        />
       </section>
 
       <section className="form-section">
@@ -570,14 +570,13 @@ export default function ProtocolForm({ initial, submitLabel, onSubmit, onDelete,
             </select>
           </label>
         </div>
-        <label>
-          Outcome note
-          <textarea
-            rows={2}
-            value={form.outcome.note || ""}
-            onChange={(e) => patchSection("outcome", "note", e.target.value || null)}
-          />
-        </label>
+        <MarkupField
+          label="Outcome note"
+          rows={3}
+          value={form.outcome.note || ""}
+          onChange={(v) => patchSection("outcome", "note", v || null)}
+          placeholder="What worked, what failed…"
+        />
       </section>
 
       {Children.map(children, (child) => {

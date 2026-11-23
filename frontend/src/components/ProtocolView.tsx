@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import MarkdownContent from "@/components/MarkdownContent";
 import { normalizeBlotTimes, type Protocol } from "@/lib/types";
 
 function Field({ label, value }: { label: string; value?: string | number | boolean | null }) {
@@ -59,7 +60,9 @@ export default function ProtocolView({ protocol }: { protocol: Protocol }) {
           protocol.notes ? (
             <div key="notes" className="view-param view-param-wide">
               <span className="view-param-label">Notes</span>
-              <span className="view-param-value view-param-notes">{protocol.notes}</span>
+              <MarkdownContent className="view-param-value view-param-notes">
+                {protocol.notes}
+              </MarkdownContent>
             </div>
           ) : null,
         ]}
@@ -178,7 +181,9 @@ export default function ProtocolView({ protocol }: { protocol: Protocol }) {
           outcome?.note ? (
             <div key="n" className="view-param view-param-wide">
               <span className="view-param-label">Note</span>
-              <span className="view-param-value view-param-notes">{outcome.note}</span>
+              <MarkdownContent className="view-param-value view-param-notes">
+                {outcome.note}
+              </MarkdownContent>
             </div>
           ) : null,
         ]}
