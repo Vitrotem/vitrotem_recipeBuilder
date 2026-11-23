@@ -4,11 +4,12 @@ import { Color } from "@tiptap/extension-color";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import { TextStyle } from "@tiptap/extension-text-style";
-import { EditorContent, useEditor } from "@tiptap/react";
+import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { useEffect, useId, type ReactNode } from "react";
 import { MARKDOWN_COLORS } from "@/lib/markdownColors";
 import { normalizeEditorHtml, toEditorHtml } from "@/lib/richText";
+import { collapseToCaret, splitHardBreaksInTextblock } from "@/lib/splitHardBreaks";
 
 type Props = {
   label: ReactNode;
@@ -17,6 +18,21 @@ type Props = {
   rows?: number;
   placeholder?: string;
 };
+
+function preserveSelection(e: React.MouseEvent) {
+  // Keep the editor selection when clicking toolbar controls.
+  e.preventDefault();
+}
+
+function applyBlockFormat(editor: Editor, run: (chain: ReturnType<Editor["chain"]>) => void) {
+  const chain = editor
+    .chain()
+    .focus()
+    .command(collapseToCaret)
+    .command(splitHardBreaksInTextblock);
+  run(chain);
+  chain.run();
+}
 
 export default function MarkupField({
   label,
@@ -48,6 +64,15 @@ export default function MarkupField({
         id: fieldId,
         class: "markup-editor-content markdown-body",
         style: `min-height: ${Math.max(rows, 3) * 1.55}rem`,
+      },
+      handleKeyDown: (_view, event) => {
+        // Shift+Enter should start a new paragraph, not a soft <br> line
+        // (soft breaks make heading/list apply to every visual line in the block).
+        if (event.key === "Enter" && event.shiftKey) {
+          editor?.commands.splitBlock();
+          return true;
+        }
+        return false;
       },
     },
     onUpdate: ({ editor: ed }) => {
@@ -94,6 +119,7 @@ export default function MarkupField({
           className={`markup-btn${editor.isActive("bold") ? " active" : ""}`}
           title="Bold"
           aria-label="Bold"
+          onMouseDown={preserveSelection}
           onClick={() => editor.chain().focus().toggleBold().run()}
         >
           <strong>B</strong>
@@ -103,6 +129,7 @@ export default function MarkupField({
           className={`markup-btn${editor.isActive("italic") ? " active" : ""}`}
           title="Italic"
           aria-label="Italic"
+          onMouseDown={preserveSelection}
           onClick={() => editor.chain().focus().toggleItalic().run()}
         >
           <em>I</em>
@@ -115,7 +142,12 @@ export default function MarkupField({
             className={`markup-btn${editor.isActive("heading", { level }) ? " active" : ""}`}
             title={`Heading ${level}`}
             aria-label={`Heading ${level}`}
-            onClick={() => editor.chain().focus().toggleHeading({ level }).run()}
+            onMouseDown={preserveSelection}
+            onClick={() =>
+              applyBlockFormat(editor, (chain) => {
+                chain.toggleHeading({ level });
+              })
+            }
           >
             H{level}
           </button>
@@ -126,7 +158,12 @@ export default function MarkupField({
           className={`markup-btn${editor.isActive("bulletList") ? " active" : ""}`}
           title="Bullet list"
           aria-label="Bullet list"
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          onMouseDown={preserveSelection}
+          onClick={() =>
+            applyBlockFormat(editor, (chain) => {
+              chain.toggleBulletList();
+            })
+          }
         >
           List
         </button>
@@ -135,7 +172,12 @@ export default function MarkupField({
           className={`markup-btn${editor.isActive("orderedList") ? " active" : ""}`}
           title="Numbered list"
           aria-label="Numbered list"
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          onMouseDown={preserveSelection}
+          onClick={() =>
+            applyBlockFormat(editor, (chain) => {
+              chain.toggleOrderedList();
+            })
+          }
         >
           1.
         </button>
@@ -144,6 +186,7 @@ export default function MarkupField({
           className={`markup-btn${editor.isActive("link") ? " active" : ""}`}
           title="Link"
           aria-label="Insert link"
+          onMouseDown={preserveSelection}
           onClick={setLink}
         >
           Link
@@ -158,6 +201,7 @@ export default function MarkupField({
               title={c.label}
               aria-label={`${c.label} text`}
               style={{ background: c.swatch }}
+              onMouseDown={preserveSelection}
               onClick={() => editor.chain().focus().setColor(c.swatch).run()}
             />
           ))}
@@ -166,6 +210,7 @@ export default function MarkupField({
             className="markup-btn markup-btn-clear-color"
             title="Clear color"
             aria-label="Clear text color"
+            onMouseDown={preserveSelection}
             onClick={() => editor.chain().focus().unsetColor().run()}
           >
             A
