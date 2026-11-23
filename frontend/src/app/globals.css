@@ -1749,6 +1749,19 @@ label .other-input {
   color: var(--text-muted);
 }
 
+.markup-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+  align-items: stretch;
+}
+
+@media (max-width: 720px) {
+  .markup-split {
+    grid-template-columns: 1fr;
+  }
+}
+
 .markup-field textarea {
   background: var(--ice);
   border: 1.5px solid var(--border);
@@ -1758,6 +1771,7 @@ label .other-input {
   color: var(--text);
   font-family: inherit;
   resize: vertical;
+  min-height: 8rem;
   transition:
     border-color 0.25s var(--ease-out),
     box-shadow 0.25s var(--ease-out),
@@ -1777,10 +1791,38 @@ label .other-input {
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
+.markup-preview {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.65rem 0.8rem;
+  min-height: 8rem;
+  overflow: auto;
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.markup-preview-empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 0.95rem;
+  opacity: 0.75;
+}
+
 .markup-toolbar {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.35rem;
+}
+
+.markup-toolbar-sep {
+  width: 1px;
+  height: 1.25rem;
+  background: var(--border);
+  margin: 0 0.15rem;
 }
 
 .markup-btn {
@@ -1812,6 +1854,40 @@ label .other-input {
 .markup-btn:focus-visible {
   outline: 2px solid var(--blue);
   outline-offset: 1px;
+}
+
+.markup-color-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.markup-color-btn {
+  appearance: none;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  border: 1.5px solid rgba(10, 37, 64, 0.18);
+  padding: 0;
+  cursor: pointer;
+  transition:
+    transform 0.15s var(--ease-spring),
+    box-shadow 0.15s;
+}
+
+.markup-color-btn:hover {
+  transform: scale(1.12);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
+.markup-color-btn:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+
+.markup-btn-clear-color {
+  color: var(--text);
+  font-weight: 800;
 }
 
 .markup-hint {
@@ -1847,16 +1923,19 @@ label .other-input {
 }
 
 .markdown-body h1 {
-  font-size: 1.25em;
+  font-size: 1.35em;
 }
 
 .markdown-body h2 {
-  font-size: 1.15em;
+  font-size: 1.2em;
 }
 
-.markdown-body h3,
+.markdown-body h3 {
+  font-size: 1.1em;
+}
+
 .markdown-body h4 {
-  font-size: 1.05em;
+  font-size: 1.02em;
 }
 
 .markdown-body ul,
@@ -1923,6 +2002,34 @@ label .other-input {
   border: none;
   border-top: 1.5px solid var(--border);
   margin: 0.85em 0;
+}
+
+.markdown-body .md-color-navy {
+  color: #0a2540;
+}
+
+.markdown-body .md-color-blue {
+  color: #1e6fd9;
+}
+
+.markdown-body .md-color-cyan {
+  color: #2a9bb8;
+}
+
+.markdown-body .md-color-green {
+  color: #2f8f5b;
+}
+
+.markdown-body .md-color-orange {
+  color: #c47a1a;
+}
+
+.markdown-body .md-color-red {
+  color: #c45c5c;
+}
+
+.markdown-body .md-color-muted {
+  color: #5a7a96;
 }
 
 .toast {
