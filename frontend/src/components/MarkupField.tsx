@@ -1,12 +1,14 @@
 "use client";
 
-import { useId, useRef, type ReactNode, type TextareaHTMLAttributes } from "react";
-import MarkdownContent from "@/components/MarkdownContent";
-import {
-  MARKDOWN_COLORS,
-  markdownColorClass,
-  type MarkdownColorId,
-} from "@/lib/markdownColors";
+import { Color } from "@tiptap/extension-color";
+import Link from "@tiptap/extension-link";
+import Placeholder from "@tiptap/extension-placeholder";
+import { TextStyle } from "@tiptap/extension-text-style";
+import { EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import { useEffect, useId, type ReactNode } from "react";
+import { MARKDOWN_COLORS } from "@/lib/markdownColors";
+import { normalizeEditorHtml, toEditorHtml } from "@/lib/richText";
 
 type Props = {
   label: ReactNode;
@@ -14,143 +16,73 @@ type Props = {
   onChange: (value: string) => void;
   rows?: number;
   placeholder?: string;
-} & Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "value" | "onChange" | "rows" | "placeholder">;
-
-type WrapOpts = {
-  before: string;
-  after: string;
-  placeholder?: string;
-  /** When set, prefix each selected line (or current line) instead of wrapping. */
-  linePrefix?: string;
-  /** Strip existing ATX heading markers before applying linePrefix. */
-  asHeading?: boolean;
 };
-
-const HEADING_PREFIX_RE = /^#{1,6}\s+/;
-
-function applyMarkup(
-  textarea: HTMLTextAreaElement,
-  value: string,
-  opts: WrapOpts,
-): { next: string; start: number; end: number } {
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
-  const selected = value.slice(start, end);
-
-  if (opts.linePrefix) {
-    const lineStart = value.lastIndexOf("\n", start - 1) + 1;
-    const lineEndIdx = value.indexOf("\n", end);
-    const lineEnd = lineEndIdx === -1 ? value.length : lineEndIdx;
-    const block = value.slice(lineStart, lineEnd);
-    const lines = block.split("\n");
-    const prefixed = lines
-      .map((line) => {
-        const bare = opts.asHeading ? line.replace(HEADING_PREFIX_RE, "") : line;
-        if (!opts.asHeading && bare.startsWith(opts.linePrefix!)) return bare;
-        return `${opts.linePrefix}${bare || opts.placeholder || ""}`;
-      })
-      .join("\n");
-    const next = value.slice(0, lineStart) + prefixed + value.slice(lineEnd);
-    return { next, start: lineStart, end: lineStart + prefixed.length };
-  }
-
-  const insert = selected || opts.placeholder || "";
-  const wrapped = `${opts.before}${insert}${opts.after}`;
-  const next = value.slice(0, start) + wrapped + value.slice(end);
-  const selStart = start + opts.before.length;
-  const selEnd = selStart + insert.length;
-  return { next, start: selStart, end: selEnd };
-}
-
-/** Replace an existing color span around the selection, or wrap selection. */
-function applyColor(
-  textarea: HTMLTextAreaElement,
-  value: string,
-  colorId: MarkdownColorId | null,
-): { next: string; start: number; end: number } {
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
-  let selStart = start;
-  let selEnd = end;
-  let inner = value.slice(start, end);
-
-  const openRe = /<span class="md-color-[a-z]+">$/i;
-  const closeRe = /^<\/span>/i;
-  const before = value.slice(0, start);
-  const after = value.slice(end);
-  const openMatch = before.match(openRe);
-  const closeMatch = after.match(closeRe);
-
-  if (openMatch && closeMatch) {
-    selStart = start - openMatch[0].length;
-    selEnd = end + closeMatch[0].length;
-    inner = value.slice(start, end);
-  } else {
-    const wrapped = value.slice(start, end).match(/^<span class="md-color-[a-z]+">([\s\S]*)<\/span>$/i);
-    if (wrapped) {
-      inner = wrapped[1];
-    } else {
-      inner = selectedOrPlaceholder(value, start, end, "colored text");
-    }
-  }
-
-  if (!colorId) {
-    const next = value.slice(0, selStart) + inner + value.slice(selEnd);
-    return { next, start: selStart, end: selStart + inner.length };
-  }
-
-  const open = `<span class="${markdownColorClass(colorId)}">`;
-  const close = "</span>";
-  const wrapped = `${open}${inner}${close}`;
-  const next = value.slice(0, selStart) + wrapped + value.slice(selEnd);
-  return {
-    next,
-    start: selStart + open.length,
-    end: selStart + open.length + inner.length,
-  };
-}
-
-function selectedOrPlaceholder(value: string, start: number, end: number, fallback: string) {
-  const selected = value.slice(start, end);
-  return selected || fallback;
-}
 
 export default function MarkupField({
   label,
   value,
   onChange,
   rows = 5,
-  placeholder,
-  id,
-  ...rest
+  placeholder = "Write notes…",
 }: Props) {
-  const autoId = useId();
-  const fieldId = id ?? autoId;
-  const previewId = `${fieldId}-preview`;
-  const ref = useRef<HTMLTextAreaElement>(null);
+  const fieldId = useId();
 
-  function commit(next: string, start: number, end: number) {
-    onChange(next);
-    requestAnimationFrame(() => {
-      const el = ref.current;
-      if (!el) return;
-      el.focus();
-      el.setSelectionRange(start, end);
-    });
+  const editor = useEditor({
+    immediatelyRender: false,
+    extensions: [
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3, 4] },
+        link: false,
+      }),
+      TextStyle,
+      Color,
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
+      }),
+      Placeholder.configure({ placeholder }),
+    ],
+    content: toEditorHtml(value),
+    editorProps: {
+      attributes: {
+        id: fieldId,
+        class: "markup-editor-content markdown-body",
+        style: `min-height: ${Math.max(rows, 3) * 1.55}rem`,
+      },
+    },
+    onUpdate: ({ editor: ed }) => {
+      onChange(normalizeEditorHtml(ed.getHTML()));
+    },
+  });
+
+  useEffect(() => {
+    if (!editor) return;
+    const incoming = toEditorHtml(value);
+    const current = normalizeEditorHtml(editor.getHTML());
+    if (normalizeEditorHtml(incoming) === current) return;
+    editor.commands.setContent(incoming || "", { emitUpdate: false });
+  }, [editor, value]);
+
+  function setLink() {
+    if (!editor) return;
+    const prev = editor.getAttributes("link").href as string | undefined;
+    const url = window.prompt("Link URL", prev || "https://");
+    if (url === null) return;
+    const trimmed = url.trim();
+    if (!trimmed) {
+      editor.chain().focus().extendMarkRange("link").unsetLink().run();
+      return;
+    }
+    editor.chain().focus().extendMarkRange("link").setLink({ href: trimmed }).run();
   }
 
-  function run(opts: WrapOpts) {
-    const el = ref.current;
-    if (!el) return;
-    const { next, start, end } = applyMarkup(el, value, opts);
-    commit(next, start, end);
-  }
-
-  function runColor(colorId: MarkdownColorId | null) {
-    const el = ref.current;
-    if (!el) return;
-    const { next, start, end } = applyColor(el, value, colorId);
-    commit(next, start, end);
+  if (!editor) {
+    return (
+      <div className="markup-field">
+        <label htmlFor={fieldId}>{label}</label>
+        <div className="markup-editor-shell markup-editor-shell-loading" />
+      </div>
+    );
   }
 
   return (
@@ -159,19 +91,19 @@ export default function MarkupField({
       <div className="markup-toolbar" role="toolbar" aria-label="Text formatting">
         <button
           type="button"
-          className="markup-btn"
+          className={`markup-btn${editor.isActive("bold") ? " active" : ""}`}
           title="Bold"
           aria-label="Bold"
-          onClick={() => run({ before: "**", after: "**", placeholder: "bold" })}
+          onClick={() => editor.chain().focus().toggleBold().run()}
         >
           <strong>B</strong>
         </button>
         <button
           type="button"
-          className="markup-btn"
+          className={`markup-btn${editor.isActive("italic") ? " active" : ""}`}
           title="Italic"
           aria-label="Italic"
-          onClick={() => run({ before: "*", after: "*", placeholder: "italic" })}
+          onClick={() => editor.chain().focus().toggleItalic().run()}
         >
           <em>I</em>
         </button>
@@ -180,18 +112,10 @@ export default function MarkupField({
           <button
             key={level}
             type="button"
-            className="markup-btn"
+            className={`markup-btn${editor.isActive("heading", { level }) ? " active" : ""}`}
             title={`Heading ${level}`}
             aria-label={`Heading ${level}`}
-            onClick={() =>
-              run({
-                before: "",
-                after: "",
-                linePrefix: `${"#".repeat(level)} `,
-                placeholder: `Heading ${level}`,
-                asHeading: true,
-              })
-            }
+            onClick={() => editor.chain().focus().toggleHeading({ level }).run()}
           >
             H{level}
           </button>
@@ -199,28 +123,28 @@ export default function MarkupField({
         <span className="markup-toolbar-sep" aria-hidden />
         <button
           type="button"
-          className="markup-btn"
+          className={`markup-btn${editor.isActive("bulletList") ? " active" : ""}`}
           title="Bullet list"
           aria-label="Bullet list"
-          onClick={() => run({ before: "", after: "", linePrefix: "- ", placeholder: "item" })}
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
         >
           List
         </button>
         <button
           type="button"
-          className="markup-btn"
+          className={`markup-btn${editor.isActive("orderedList") ? " active" : ""}`}
           title="Numbered list"
           aria-label="Numbered list"
-          onClick={() => run({ before: "", after: "", linePrefix: "1. ", placeholder: "item" })}
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
         >
           1.
         </button>
         <button
           type="button"
-          className="markup-btn"
+          className={`markup-btn${editor.isActive("link") ? " active" : ""}`}
           title="Link"
           aria-label="Insert link"
-          onClick={() => run({ before: "[", after: "](url)", placeholder: "link text" })}
+          onClick={setLink}
         >
           Link
         </button>
@@ -230,11 +154,11 @@ export default function MarkupField({
             <button
               key={c.id}
               type="button"
-              className="markup-color-btn"
+              className={`markup-color-btn${editor.isActive("textStyle", { color: c.swatch }) ? " active" : ""}`}
               title={c.label}
               aria-label={`${c.label} text`}
               style={{ background: c.swatch }}
-              onClick={() => runColor(c.id)}
+              onClick={() => editor.chain().focus().setColor(c.swatch).run()}
             />
           ))}
           <button
@@ -242,38 +166,16 @@ export default function MarkupField({
             className="markup-btn markup-btn-clear-color"
             title="Clear color"
             aria-label="Clear text color"
-            onClick={() => runColor(null)}
+            onClick={() => editor.chain().focus().unsetColor().run()}
           >
             A
           </button>
         </span>
       </div>
 
-      <div className="markup-split">
-        <textarea
-          id={fieldId}
-          ref={ref}
-          rows={rows}
-          value={value}
-          placeholder={placeholder}
-          onChange={(e) => onChange(e.target.value)}
-          aria-describedby={previewId}
-          {...rest}
-        />
-        <div
-          id={previewId}
-          className="markup-preview"
-          aria-live="polite"
-          aria-label="Live preview"
-        >
-          {value.trim() ? (
-            <MarkdownContent>{value}</MarkdownContent>
-          ) : (
-            <p className="markup-preview-empty">Live preview</p>
-          )}
-        </div>
+      <div className="markup-editor-shell">
+        <EditorContent editor={editor} />
       </div>
-      <span className="markup-hint">Markdown with live preview — headings, lists, links, and colors</span>
     </div>
   );
 }

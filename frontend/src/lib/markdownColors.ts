@@ -1,4 +1,4 @@
-/** Allowed note text colors (CSS classes on sanitized <span>s). */
+/** Note text colors for the rich-text toolbar. */
 export const MARKDOWN_COLORS = [
   { id: "navy", label: "Navy", swatch: "#0a2540" },
   { id: "blue", label: "Blue", swatch: "#1e6fd9" },
@@ -11,8 +11,5 @@ export const MARKDOWN_COLORS = [
 
 export type MarkdownColorId = (typeof MARKDOWN_COLORS)[number]["id"];
 
+/** Legacy class-based color spans from the earlier markdown editor. */
 export const MARKDOWN_COLOR_CLASS_RE = /^md-color-(navy|blue|cyan|green|orange|red|muted)$/;
-
-export function markdownColorClass(id: MarkdownColorId): string {
-  return `md-color-${id}`;
-}

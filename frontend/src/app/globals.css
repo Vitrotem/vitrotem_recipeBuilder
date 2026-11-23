@@ -1737,7 +1737,7 @@ label .other-input {
   white-space: normal;
 }
 
-/* ── Markdown notes editor / renderer ── */
+/* ── Rich-text notes editor / renderer ── */
 .markup-field {
   display: flex;
   flex-direction: column;
@@ -1749,66 +1749,50 @@ label .other-input {
   color: var(--text-muted);
 }
 
-.markup-split {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.65rem;
-  align-items: stretch;
-}
-
-@media (max-width: 720px) {
-  .markup-split {
-    grid-template-columns: 1fr;
-  }
-}
-
-.markup-field textarea {
+.markup-editor-shell {
   background: var(--ice);
   border: 1.5px solid var(--border);
   border-radius: var(--radius);
-  padding: 0.65rem 0.8rem;
-  font-size: 1.05rem;
-  color: var(--text);
-  font-family: inherit;
-  resize: vertical;
-  min-height: 8rem;
   transition:
     border-color 0.25s var(--ease-out),
     box-shadow 0.25s var(--ease-out),
-    background 0.25s,
-    transform 0.2s;
+    background 0.25s;
 }
 
-.markup-field textarea:hover {
+.markup-editor-shell:hover {
   border-color: var(--border-strong);
   background: var(--white);
 }
 
-.markup-field textarea:focus {
-  outline: none;
+.markup-editor-shell:focus-within {
   border-color: var(--blue);
   background: var(--white);
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
-.markup-preview {
-  background: var(--white);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius);
-  padding: 0.65rem 0.8rem;
+.markup-editor-shell-loading {
   min-height: 8rem;
-  overflow: auto;
-  color: var(--text);
-  font-size: 1.05rem;
-  font-weight: 600;
 }
 
-.markup-preview-empty {
-  margin: 0;
+.markup-editor-shell .tiptap,
+.markup-editor-content {
+  min-height: 8rem;
+  padding: 0.65rem 0.8rem;
+  font-size: 1.05rem;
+  color: var(--text);
+  font-family: inherit;
+  line-height: 1.5;
+  outline: none;
+}
+
+.markup-editor-shell .tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
   color: var(--text-muted);
+  opacity: 0.7;
   font-weight: 500;
-  font-size: 0.95rem;
-  opacity: 0.75;
 }
 
 .markup-toolbar {
@@ -1851,6 +1835,12 @@ label .other-input {
   color: var(--blue);
 }
 
+.markup-btn.active {
+  border-color: var(--blue);
+  background: var(--accent-dim);
+  color: var(--blue-deep);
+}
+
 .markup-btn:focus-visible {
   outline: 2px solid var(--blue);
   outline-offset: 1px;
@@ -1875,7 +1865,8 @@ label .other-input {
     box-shadow 0.15s;
 }
 
-.markup-color-btn:hover {
+.markup-color-btn:hover,
+.markup-color-btn.active {
   transform: scale(1.12);
   box-shadow: 0 0 0 2px var(--accent-dim);
 }
@@ -1888,12 +1879,6 @@ label .other-input {
 .markup-btn-clear-color {
   color: var(--text);
   font-weight: 800;
-}
-
-.markup-hint {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  opacity: 0.85;
 }
 
 .markdown-body {

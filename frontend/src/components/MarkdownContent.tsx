@@ -1,50 +1,68 @@
 "use client";
 
-import type { Components } from "react-markdown";
-import ReactMarkdown from "react-markdown";
-import rehypeRaw from "rehype-raw";
-import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
-import remarkGfm from "remark-gfm";
-import { MARKDOWN_COLOR_CLASS_RE } from "@/lib/markdownColors";
+import DOMPurify from "dompurify";
+import { useEffect, useState } from "react";
+import { toEditorHtml } from "@/lib/richText";
 
 type Props = {
   children: string;
   className?: string;
 };
 
-const sanitizeSchema = {
-  ...defaultSchema,
-  tagNames: [...(defaultSchema.tagNames || []), "span"],
-  attributes: {
-    ...defaultSchema.attributes,
-    span: ["className", "class"],
-  },
+const PURIFY = {
+  ALLOWED_TAGS: [
+    "p",
+    "br",
+    "strong",
+    "b",
+    "em",
+    "i",
+    "u",
+    "s",
+    "a",
+    "ul",
+    "ol",
+    "li",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "blockquote",
+    "code",
+    "pre",
+    "hr",
+    "span",
+  ],
+  ALLOWED_ATTR: ["href", "target", "rel", "class", "style"],
 };
 
-const components: Components = {
-  span({ className, children }) {
-    const safe = (className || "")
-      .split(/\s+/)
-      .filter((c) => MARKDOWN_COLOR_CLASS_RE.test(c))
-      .join(" ");
-    if (!safe) return <>{children}</>;
-    return <span className={safe}>{children}</span>;
-  },
-};
+function sanitizeNoteHtml(html: string): string {
+  return DOMPurify.sanitize(html, {
+    ...PURIFY,
+    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
+  });
+}
 
-/** Safely render markdown notes (bold, headings, lists, links, colored spans). */
+/** Render stored note HTML (or legacy markdown) safely. */
 export default function MarkdownContent({ children, className }: Props) {
-  if (!children.trim()) return null;
+  const [html, setHtml] = useState("");
+
+  useEffect(() => {
+    if (!children.trim()) {
+      setHtml("");
+      return;
+    }
+    setHtml(sanitizeNoteHtml(toEditorHtml(children)));
+  }, [children]);
+
+  if (!html) return null;
 
   return (
-    <div className={className ? `markdown-body ${className}` : "markdown-body"}>
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
-        components={components}
-      >
-        {children}
-      </ReactMarkdown>
-    </div>
+    <div
+      className={className ? `markdown-body ${className}` : "markdown-body"}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
   );
 }
